@@ -1,21 +1,29 @@
 {
-  "name": "vite-vanilla-ts-lib-starter",
-  "private": true,
-  "version": "0.0.6",
-  "module": "./dist/vite-vanilla-ts-lib-starter.js",
+  "name": "@taskon/embed",
+  "private": false,
+  "version": "0.0.1@beta1",
+  "description": "TaskOn embed widget for integrating TaskOn tasks into your website",
+  "main": "./dist/embed.js",
+  "module": "./dist/embed.js",
   "type": "module",
   "exports": {
     ".": {
-      "import": "./dist/vite-vanilla-ts-lib-starter.js"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/embed.js"
     },
     "./dist/": {
       "import": "./dist/"
     }
   },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md"
+  ],
   "types": "./dist/index.d.ts",
   "scripts": {
     "dev": "vite --host",
-    "build": "rimraf build/**/* && tsc && vite build && dts-bundle-generator --config ./dts-bundle-generator.config.ts && copyfiles ./package.json build",
+    "build": "rimraf build/**/* && tsc && vite build && dts-bundle-generator --config ./dts-bundle-generator.config.cjs && copyfiles ./package.json build",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "lint:scripts": "eslint . --ext .ts",

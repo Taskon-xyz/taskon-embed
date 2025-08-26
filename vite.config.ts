@@ -1,23 +1,10 @@
 /// <reference types="vitest" />
 import path from "path";
 import { defineConfig } from "vite";
-import packageJson from "./package.json";
-
-const getPackageName = () => {
-  return packageJson.name;
-};
-
-const getPackageNameCamelCase = () => {
-  try {
-    return getPackageName().replace(/-./g, char => char[1].toUpperCase());
-  } catch {
-    throw new Error("Name property in package.json is missing.");
-  }
-};
 
 const fileName = {
-  es: `${getPackageName()}.js`,
-  iife: `${getPackageName()}.iife.js`,
+  es: "embed.js",
+  iife: "embed.iife.js",
 };
 
 const formats = Object.keys(fileName) as Array<keyof typeof fileName>;
@@ -28,7 +15,7 @@ export default defineConfig({
     outDir: "./build/dist",
     lib: {
       entry: path.resolve(__dirname, "src/index.ts"),
-      name: getPackageNameCamelCase(),
+      name: "TaskonEmbed",
       formats,
       fileName: format => fileName[format],
     },
