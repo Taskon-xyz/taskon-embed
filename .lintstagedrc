@@ -1,4 +1,4 @@
 {
-  "./**/*.{ts,html,json}": "npm run format:scripts",
-  "./**/*.{css,scss}": "npm run format:styles"
+  "*.{ts,js,html,json,md}": ["prettier --write", "git add"],
+  "*.{ts,js}": ["eslint --fix", "git add"]
 }
