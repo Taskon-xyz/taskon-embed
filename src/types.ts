@@ -50,7 +50,7 @@ export interface AuthUser {
  */
 export interface TaskOnEmbedEvents {
   /** Fired when iframe requests user login */
-  loginRequired: (data: { type?: LoginType }) => void;
+  loginRequired: () => void;
   taskCompleted: (task: any, taskOnUserId: number) => void;
 }
 
@@ -79,9 +79,23 @@ export type PenpalChildMethods = {
   getIsLoggedIn(loginType: LoginType, value: string): boolean;
 };
 
+export type SnsType =
+  | "twitter"
+  | "discord"
+  | "telegram"
+  | "reddit"
+  | "youtube"
+  | "fsl";
+
 export type PenpalParentMethods = {
   /**
-
+   * Request parent to login
    */
   requestLogin(): Promise<void>;
+  /**
+   * Request parent to oauth
+   * @param snsType - OAuth provider name
+   * @param state - Unique identifier for the request
+   */
+  requestOauth(snsType: SnsType, state: string): void;
 };

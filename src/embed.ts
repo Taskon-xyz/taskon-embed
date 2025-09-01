@@ -194,7 +194,10 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
 
   private createIframe(): HTMLIFrameElement {
     const iframe = document.createElement("iframe");
-    const url = new URL("/", this.config.baseUrl);
+    // Recover url after oauth
+    const latestUrl = localStorage.getItem("taskon_oauth_latest_url");
+    const url = new URL(latestUrl || this.config.baseUrl);
+    localStorage.removeItem("taskon_oauth_latest_url");
     url.searchParams.set("client_id", this.config.clientId);
 
     iframe.src = url.toString();
@@ -227,7 +230,21 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
 
     const methods: PenpalParentMethods = {
       requestLogin: async () => {
-        // todo
+        this.emit("loginRequired");
+      },
+      requestOauth: (snsType, state) => {
+        // open new tab of the oauth center
+        // todo 1 set the auth url
+        const url = new URL("https://tempoauth.taskon.xyz");
+        url.searchParams.set("type", snsType);
+        url.searchParams.set("state", state);
+        url.searchParams.set("from", window.location.href);
+        localStorage.setItem(
+          "taskon_oauth_latest_url",
+          this.iframe?.src || this.config.baseUrl
+        );
+        // (新页面打开会拦截)
+        window.location.href = url.toString();
       },
     };
 
