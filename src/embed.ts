@@ -1,8 +1,8 @@
 import { EventEmitter } from "eventemitter3";
 import { connect, Connection, RemoteProxy, WindowMessenger } from "penpal";
+import { LoginType } from "./login-types";
 import {
-  LoginRequest,
-  LoginType,
+  LoginParams,
   PenpalChildMethods,
   PenpalParentMethods,
   TaskOnEmbedConfig,
@@ -26,7 +26,7 @@ import {
  *
  * await embed.login({
  *   type: 'email',
- *   value: 'user@example.com',
+ *   account: 'user@example.com',
  *   signature: serverSignature,
  * });
  * ```
@@ -39,6 +39,7 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
   private penpalConnection: Connection<PenpalChildMethods> | null = null;
   private connectedProvider: any = null;
   private connectedAddress: string = "";
+  public initialized: boolean = false;
 
   /**
    * Creates a new TaskOn embed instance.
@@ -56,6 +57,7 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
   public async init(): Promise<void> {
     this.renderIframe();
     await this.initPenpal();
+    this.initialized = true;
   }
 
   /**
@@ -68,19 +70,19 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
    * // Email login
    * await embed.login({
    *   type: 'email',
-   *   value: 'user@example.com',
+   *   account: 'user@example.com',
    *   signature: serverSignature,
    * });
    *
    * // EVM wallet login
    * await embed.login({
    *   type: 'evm',
-   *   value: '0x1234...',
+   *   account: '0x1234...',
    *   signature: serverSignature,
    * });
    * ```
    */
-  public async login(request: LoginRequest): Promise<void> {
+  public async login(request: LoginParams): Promise<void> {
     if (!this.penpal) {
       throw new Error("Not initialized, please call .init() first");
     }
@@ -90,13 +92,19 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
           "The eip1193 compatible provider is required when login type is evm"
         );
       }
-      this.connectedAddress = request.value;
+      this.connectedAddress = request.account;
       this.connectedProvider = request.provider || null;
     } else {
       this.connectedAddress = "";
       this.connectedProvider = null;
     }
-    return this.penpal.login(request);
+    return this.penpal.login({
+      type: request.type,
+      account: request.account,
+      signature: request.signature,
+      timestamp: request.timestamp,
+      username: request.username,
+    });
   }
 
   /**
@@ -119,12 +127,12 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
    */
   public async getIsLoggedIn(
     loginType: LoginType,
-    value: string
+    account: string
   ): Promise<boolean> {
     if (!this.penpal) {
       throw new Error("Not initialized, please call .init() first");
     }
-    return this.penpal.getIsLoggedIn(loginType, value);
+    return this.penpal.getIsLoggedIn(loginType, account);
   }
 
   /**
@@ -181,6 +189,7 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
     this.penpalConnection?.destroy();
     this.penpalConnection = null;
     this.penpal = null;
+    this.initialized = false;
   }
 
   /**

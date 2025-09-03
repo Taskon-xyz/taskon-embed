@@ -13,6 +13,7 @@ export default defineConfig({
   base: "./",
   build: {
     outDir: "./build/dist",
+    sourcemap: false,
     lib: {
       entry: path.resolve(__dirname, "src/index.ts"),
       name: "TaskonEmbed",

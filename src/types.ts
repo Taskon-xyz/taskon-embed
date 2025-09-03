@@ -1,4 +1,11 @@
 /**
+ * Common types shared between browser and Node.js environments
+ * LoginType is in login-types.ts
+ */
+
+import { LoginType } from "./login-types";
+
+/**
  * Configuration options for TaskOn embed instance
  */
 export interface TaskOnEmbedConfig {
@@ -14,23 +21,36 @@ export interface TaskOnEmbedConfig {
   height?: string | number;
 }
 
-/** Supported login types */
-export type LoginType = "email" | "evm";
+export interface LoginParams {
+  /** Type of login credential */
+  type: LoginType;
+  /** Account (email addresns or EVM address) */
+  account: string;
+  /** Server-generated signature for authentication, optional when the user is logged in(getIsLoggedIn is true) */
+  signature?: string;
+  /**
+   * Timestamp for signature, optional when the user is logged in(getIsLoggedIn is true)
+   */
+  timestamp?: number;
+  /**
+   * Default username for new user(optional)
+   */
+  username?: string;
+  /**
+   * Ethereum eip1193 compatible provider, needed when type is evm
+   */
+  provider?: any;
+}
 
 /**
  * Login request parameters
  */
 export interface LoginRequest {
-  /** Type of login credential */
   type: LoginType;
-  /** The credential value (email addresns or EVM address) */
-  value: string;
-  /** Server-generated signature for authentication (signs value + timestamp), optional when the user is logged in(getIsLoggedIn is true) */
+  account: string;
   signature?: string;
-  /**
-   * Ethereum eip1193 compatible provider, needed when type is evm
-   */
-  provider?: any;
+  timestamp?: number;
+  username?: string;
 }
 
 /**
@@ -41,8 +61,8 @@ export interface AuthUser {
   id: string;
   /** Type of authentication used */
   type: LoginType;
-  /** User credential value */
-  value: string;
+  /** User account */
+  account: string;
   /** Optional signature for authentication */
   signature?: string;
   /** Optional timestamp when signature was created */
@@ -72,15 +92,15 @@ export type PenpalChildMethods = {
   /**
    * Logout with email or EVM address
    * @param loginType - Login type, if not provided, all accounts will be logged out
-   * @param value - Login value, if not provided, all accounts will be logged out
+   * @param account - Login account, if not provided, all accounts will be logged out
    * @returns Promise that resolves when logout is successful
    */
-  logout(loginType?: LoginType, value?: string): Promise<void>;
+  logout(loginType?: LoginType, account?: string): Promise<void>;
   /**
    * Get if the user is logged in
    * @returns Promise that resolves to true if logged in
    */
-  getIsLoggedIn(loginType: LoginType, value: string): boolean;
+  getIsLoggedIn(loginType: LoginType, account: string): boolean;
 };
 
 export type SnsType =

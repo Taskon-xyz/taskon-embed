@@ -11,6 +11,10 @@
       "types": "./build/dist/index.d.ts",
       "import": "./build/dist/embed.js"
     },
+    "./node": {
+      "types": "./build/dist/node/index.d.ts",
+      "import": "./build/dist/node/index.js"
+    },
     "./build/dist/": {
       "import": "./build/dist/"
     }
@@ -23,7 +27,7 @@
   "types": "./build/dist/index.d.ts",
   "scripts": {
     "dev": "vite --host",
-    "build": "rimraf build/**/* && tsc && vite build && dts-bundle-generator --config ./dts-bundle-generator.config.cjs && copyfiles ./package.json build",
+    "build": "rimraf build/**/* && tsc && vite build && tsc --project tsconfig.node.json && dts-bundle-generator --config ./dts-bundle-generator.config.cjs && copyfiles ./package.json build",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs",
