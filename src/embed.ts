@@ -37,6 +37,8 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
   private container: HTMLElement | null = null;
   private penpal: RemoteProxy<PenpalChildMethods> | null = null;
   private penpalConnection: Connection<PenpalChildMethods> | null = null;
+  private connectedProvider: any = null;
+  private connectedAddress: string = "";
 
   /**
    * Creates a new TaskOn embed instance.
@@ -53,9 +55,7 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
    */
   public async init(): Promise<void> {
     this.renderIframe();
-    setTimeout(() => {
-      this.initPenpal();
-    }, 0);
+    await this.initPenpal();
   }
 
   /**
@@ -83,6 +83,18 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
   public async login(request: LoginRequest): Promise<void> {
     if (!this.penpal) {
       throw new Error("Not initialized, please call .init() first");
+    }
+    if (request.type === "evm") {
+      if (!request.provider) {
+        throw new Error(
+          "The eip1193 compatible provider is required when login type is evm"
+        );
+      }
+      this.connectedAddress = request.value;
+      this.connectedProvider = request.provider || null;
+    } else {
+      this.connectedAddress = "";
+      this.connectedProvider = null;
     }
     return this.penpal.login(request);
   }
@@ -245,6 +257,18 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
         );
         // (新页面打开会拦截)
         window.location.href = url.toString();
+      },
+      requestSignVerify: async hexMessage => {
+        if (!this.connectedProvider) {
+          throw new Error("Provider not found");
+        }
+        if (!this.connectedAddress) {
+          throw new Error("No connected address");
+        }
+        return this.connectedProvider.request({
+          method: "personal_sign",
+          params: [hexMessage, this.connectedAddress],
+        });
       },
     };
 

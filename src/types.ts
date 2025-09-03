@@ -27,6 +27,10 @@ export interface LoginRequest {
   value: string;
   /** Server-generated signature for authentication (signs value + timestamp), optional when the user is logged in(getIsLoggedIn is true) */
   signature?: string;
+  /**
+   * Ethereum eip1193 compatible provider, needed when type is evm
+   */
+  provider?: any;
 }
 
 /**
@@ -98,4 +102,8 @@ export type PenpalParentMethods = {
    * @param state - Unique identifier for the request
    */
   requestOauth(snsType: SnsType, state: string): void;
+  /**
+   * evm登录时，请求签名验证
+   */
+  requestSignVerify(hexMessage: string): Promise<string>;
 };
