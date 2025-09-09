@@ -19,6 +19,8 @@ export interface TaskOnEmbedConfig {
   width?: string | number;
   /** Height of the embed iframe (CSS units or pixel number) */
   height?: string | number;
+  /** OAuth tool URL for handling OAuth in white-label mode (default: 'https://generalauthservice.com') */
+  oauthToolUrl?: string;
 }
 
 export interface LoginParams {

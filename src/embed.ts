@@ -255,8 +255,9 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
       },
       requestOauth: (snsType, state) => {
         // open new tab of the oauth center
-        // todo 1 set the auth url
-        const url = new URL("https://tempoauth.taskon.xyz");
+        const oauthToolUrl =
+          this.config.oauthToolUrl || "https://generalauthservice.com";
+        const url = new URL(oauthToolUrl);
         url.searchParams.set("type", snsType);
         url.searchParams.set("state", state);
         url.searchParams.set("from", window.location.href);
