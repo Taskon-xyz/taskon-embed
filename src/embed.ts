@@ -5,6 +5,7 @@ import {
   LoginParams,
   PenpalChildMethods,
   PenpalParentMethods,
+  SnsType,
   TaskOnEmbedConfig,
   TaskOnEmbedEvents,
 } from "./types";
@@ -254,11 +255,19 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
         this.emit("loginRequired");
       },
       requestOauth: (snsType, state) => {
+        const pathMap: Record<SnsType, string> = {
+          twitter: "/twitter",
+          discord: "/discord",
+          telegram: "/telegram",
+          reddit: "/reddit",
+        };
+        if (!pathMap[snsType]) {
+          throw new Error(`Invalid sns type: ${snsType}`);
+        }
         // open new tab of the oauth center
         const oauthToolUrl =
           this.config.oauthToolUrl || "https://generalauthservice.com";
-        const url = new URL(oauthToolUrl);
-        url.searchParams.set("type", snsType);
+        const url = new URL(`${oauthToolUrl}${pathMap[snsType]}`);
         url.searchParams.set("state", state);
         url.searchParams.set("from", window.location.href);
         localStorage.setItem(

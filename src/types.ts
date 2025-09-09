@@ -105,13 +105,7 @@ export type PenpalChildMethods = {
   getIsLoggedIn(loginType: LoginType, account: string): boolean;
 };
 
-export type SnsType =
-  | "twitter"
-  | "discord"
-  | "telegram"
-  | "reddit"
-  | "youtube"
-  | "fsl";
+export type SnsType = "twitter" | "discord" | "telegram" | "reddit";
 
 export type PenpalParentMethods = {
   /**
