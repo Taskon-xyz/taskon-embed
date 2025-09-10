@@ -78,6 +78,8 @@ export interface TaskOnEmbedEvents {
   /** Fired when iframe requests user login */
   loginRequired: () => void;
   taskCompleted: (task: any, taskOnUserId: number) => void;
+  /** Fired when iframe route changes */
+  routeChanged: (fullPath: string) => void;
 }
 
 /**
@@ -103,6 +105,11 @@ export type PenpalChildMethods = {
    * @returns Promise that resolves to true if logged in
    */
   getIsLoggedIn(loginType: LoginType, account: string): boolean;
+  /**
+   * Set iframe internal route
+   * @param fullPath - Target route path
+   */
+  setRoute(fullPath: string): Promise<void>;
 };
 
 export type SnsType = "twitter" | "discord" | "telegram" | "reddit";
@@ -119,7 +126,11 @@ export type PenpalParentMethods = {
    */
   requestOauth(snsType: SnsType, state: string): void;
   /**
-   * evm登录时，请求签名验证
+   * Request signature verification for EVM login
    */
   requestSignVerify(hexMessage: string): Promise<string>;
+  /**
+   * Notify parent when iframe route changes
+   */
+  onRouteChange(fullPath: string): void;
 };

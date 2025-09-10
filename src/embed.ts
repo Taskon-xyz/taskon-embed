@@ -41,6 +41,7 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
   private connectedProvider: any = null;
   private connectedAddress: string = "";
   public initialized: boolean = false;
+  private _currentRoute: string = "";
 
   /**
    * Creates a new TaskOn embed instance.
@@ -137,6 +138,31 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
   }
 
   /**
+   * Set iframe internal route
+   *
+   * @param fullPath - Target route path
+   *
+   * @example
+   * ```typescript
+   * // Navigate to a specific path
+   * await embed.setRoute('/profile');
+   * ```
+   */
+  public async setRoute(fullPath: string): Promise<void> {
+    if (!this.penpal) {
+      throw new Error("Not initialized, please call .init() first");
+    }
+    return this.penpal.setRoute(fullPath);
+  }
+
+  /**
+   * Get current iframe route
+   */
+  public get currentRoute(): string {
+    return this._currentRoute;
+  }
+
+  /**
    * Updates the size of the embed iframe
    *
    * @param width - New width (string or number in pixels)
@@ -191,6 +217,7 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
     this.penpalConnection = null;
     this.penpal = null;
     this.initialized = false;
+    this._currentRoute = "";
   }
 
   /**
@@ -216,13 +243,31 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
 
   private createIframe(): HTMLIFrameElement {
     const iframe = document.createElement("iframe");
-    // Recover url after oauth
-    const latestUrl = localStorage.getItem("taskon_oauth_latest_url");
-    const url = new URL(latestUrl || this.config.baseUrl);
-    localStorage.removeItem("taskon_oauth_latest_url");
-    url.searchParams.set("client_id", this.config.clientId);
 
-    iframe.src = url.toString();
+    // Check if there's a saved route to restore (after OAuth return)
+    const savedRoute = localStorage.getItem("taskon_saved_route");
+    if (savedRoute) {
+      // Handle potential duplicate slashes
+      const baseUrl = this.config.baseUrl.endsWith("/")
+        ? this.config.baseUrl.slice(0, -1)
+        : this.config.baseUrl;
+      const routePath = savedRoute.startsWith("/")
+        ? savedRoute
+        : "/" + savedRoute;
+      const fullUrl = baseUrl + routePath;
+
+      const urlWithRoute = new URL(fullUrl);
+      urlWithRoute.searchParams.set("client_id", this.config.clientId);
+      iframe.src = urlWithRoute.toString();
+
+      // Clean up saved route
+      localStorage.removeItem("taskon_saved_route");
+    } else {
+      const url = new URL(this.config.baseUrl);
+      url.searchParams.set("client_id", this.config.clientId);
+      iframe.src = url.toString();
+    }
+
     iframe.style.width = this.resolveSize(this.config.width, "100%");
     iframe.style.height = this.resolveSize(this.config.height, "600px");
     iframe.style.border = "none";
@@ -264,18 +309,24 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
         if (!pathMap[snsType]) {
           throw new Error(`Invalid sns type: ${snsType}`);
         }
+
+        // Save current route state for OAuth return restoration
+        if (this._currentRoute) {
+          localStorage.setItem("taskon_saved_route", this._currentRoute);
+        }
+
         // open new tab of the oauth center
         const oauthToolUrl =
           this.config.oauthToolUrl || "https://generalauthservice.com";
         const url = new URL(`${oauthToolUrl}${pathMap[snsType]}`);
         url.searchParams.set("state", state);
         url.searchParams.set("from", window.location.href);
-        localStorage.setItem(
-          "taskon_oauth_latest_url",
-          this.iframe?.src || this.config.baseUrl
-        );
-        // (新页面打开会拦截)
+        // Navigate to OAuth page
         window.location.href = url.toString();
+      },
+      onRouteChange: (fullPath: string) => {
+        this._currentRoute = fullPath;
+        this.emit("routeChanged", fullPath);
       },
       requestSignVerify: async hexMessage => {
         if (!this.connectedProvider) {
