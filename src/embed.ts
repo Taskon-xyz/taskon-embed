@@ -1,8 +1,8 @@
 import { EventEmitter } from "eventemitter3";
 import { connect, Connection, RemoteProxy, WindowMessenger } from "penpal";
-import { LoginType } from "./login-types";
 import {
   LoginParams,
+  LoginType,
   PenpalChildMethods,
   PenpalParentMethods,
   SnsType,
@@ -16,8 +16,7 @@ import {
  * @example
  * ```typescript
  * const embed = new TaskOnEmbed({
- *   clientId: 'your-client-id',
- *   baseUrl: 'https://taskon.xyz',
+ *   baseUrl: 'https://yourtaskondomain.com',
  *   containerElement: '#taskon-container'
  * });
  *
@@ -42,6 +41,10 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
   private connectedAddress: string = "";
   public initialized: boolean = false;
   private _currentRoute: string = "";
+  private availableProviders: Record<string, any> = {};
+  private eventListeners: Map<string, Map<string, (...args: any[]) => void>> =
+    new Map();
+  private walletWatcher: number | null = null;
 
   /**
    * Creates a new TaskOn embed instance.
@@ -59,6 +62,7 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
   public async init(): Promise<void> {
     this.renderIframe();
     await this.initPenpal();
+    await this.initWalletProviders();
     this.initialized = true;
   }
 
@@ -218,6 +222,109 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
     this.penpal = null;
     this.initialized = false;
     this._currentRoute = "";
+    this.availableProviders = {};
+    this.eventListeners.clear();
+
+    // Clear wallet watcher
+    if (this.walletWatcher) {
+      clearInterval(this.walletWatcher);
+      this.walletWatcher = null;
+    }
+  }
+
+  /**
+   * Initialize wallet providers by detecting available wallets and creating proxies
+   */
+  private async initWalletProviders(): Promise<void> {
+    // Initial detection of wallet providers
+    this.availableProviders = this.detectWalletProviders();
+
+    // Send the provider information to iframe for setup
+    await this.notifyIframeOfProviders();
+
+    // Start watching for dynamically injected providers
+    this.startWalletProviderWatcher();
+  }
+
+  /**
+   * Start watching for dynamically injected wallet providers
+   */
+  private startWalletProviderWatcher(): void {
+    // Check for new providers every 3 seconds
+    this.walletWatcher = setInterval(async () => {
+      const currentProviders = this.detectWalletProviders();
+      const currentProviderKeys = Object.keys(currentProviders);
+      const existingProviderKeys = Object.keys(this.availableProviders);
+
+      // Check for new providers
+      const newProviders = currentProviderKeys.filter(
+        key => !existingProviderKeys.includes(key)
+      );
+
+      if (newProviders.length > 0) {
+        console.log("New wallet providers detected:", newProviders);
+
+        // Add new providers to our collection
+        for (const key of newProviders) {
+          if (currentProviders[key]) {
+            this.availableProviders[key] = currentProviders[key];
+          }
+        }
+
+        // Notify iframe about all providers (including new ones)
+        await this.notifyIframeOfProviders();
+      }
+    }, 3000) as unknown as number;
+  }
+
+  /**
+   * Detect available wallet providers in the current window
+   */
+  private detectWalletProviders(): Record<string, any> {
+    const providers: Record<string, any> = {};
+
+    // Check for EVM wallet providers only
+    if ((window as any).ethereum) {
+      providers.ethereum = (window as any).ethereum;
+    }
+
+    if ((window as any).okxwallet) {
+      providers.okxwallet = (window as any).okxwallet;
+    }
+
+    if ((window as any).onto) {
+      providers.onto = (window as any).onto;
+    }
+
+    if ((window as any).bitkeep?.ethereum) {
+      providers["bitkeep.ethereum"] = (window as any).bitkeep.ethereum;
+    }
+
+    return providers;
+  }
+
+  /**
+   * Notify iframe about available wallet providers via postMessage
+   */
+  private async notifyIframeOfProviders(): Promise<void> {
+    if (!this.iframe?.contentWindow || !this.penpal) return;
+
+    try {
+      // Wait a bit for iframe to be fully loaded
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Send provider keys to iframe so it can set up proxy objects
+      const providerKeys = Object.keys(this.availableProviders);
+      console.log("Notifying iframe of available providers:", providerKeys);
+
+      // The iframe will receive this and set up window objects accordingly
+      // This avoids cross-origin issues with direct window manipulation
+      if (this.penpal.setupWalletProviders) {
+        await this.penpal.setupWalletProviders(providerKeys);
+      }
+    } catch (error) {
+      console.warn("Failed to notify iframe of providers:", error);
+    }
   }
 
   /**
@@ -257,19 +364,19 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
       const fullUrl = baseUrl + routePath;
 
       const urlWithRoute = new URL(fullUrl);
-      urlWithRoute.searchParams.set("client_id", this.config.clientId);
+      urlWithRoute.searchParams.set("origin", window.location.origin);
       iframe.src = urlWithRoute.toString();
 
       // Clean up saved route
       localStorage.removeItem("taskon_saved_route");
     } else {
       const url = new URL(this.config.baseUrl);
-      url.searchParams.set("client_id", this.config.clientId);
+      url.searchParams.set("origin", window.location.origin);
       iframe.src = url.toString();
     }
 
     iframe.style.width = this.resolveSize(this.config.width, "100%");
-    iframe.style.height = this.resolveSize(this.config.height, "600px");
+    iframe.style.height = this.resolveSize(this.config.height, "100%");
     iframe.style.border = "none";
     iframe.allow = "clipboard-write";
 
@@ -340,6 +447,70 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
           params: [hexMessage, this.connectedAddress],
         });
       },
+      requestWalletProvider: async (
+        providerKey: string,
+        method: string,
+        params?: any[]
+      ) => {
+        const originalProvider = this.getOriginalProvider(providerKey);
+        if (!originalProvider) {
+          throw new Error(`Provider ${providerKey} not found`);
+        }
+
+        // Handle the request using the original provider
+        return originalProvider.request({ method, params });
+      },
+      subscribeWalletEvents: async (
+        providerKey: string,
+        eventName: string,
+        listenerId: string
+      ) => {
+        const originalProvider = this.getOriginalProvider(providerKey);
+        if (!originalProvider || !originalProvider.on) {
+          return;
+        }
+
+        // Create event handler that forwards events to iframe
+        const handler = (...args: any[]) => {
+          // Forward the event to iframe through penpal
+          if (this.penpal && this.penpal.onWalletEvent) {
+            this.penpal
+              .onWalletEvent(providerKey, eventName, listenerId, ...args)
+              .catch((error: any) => {
+                console.warn(
+                  `Failed to forward wallet event ${eventName}:`,
+                  error
+                );
+              });
+          }
+        };
+
+        // Store the handler for cleanup
+        if (!this.eventListeners.has(`${providerKey}:handlers`)) {
+          this.eventListeners.set(`${providerKey}:handlers`, new Map());
+        }
+        const handlerMap = this.eventListeners.get(`${providerKey}:handlers`)!;
+        handlerMap.set(`${eventName}:${listenerId}`, handler);
+
+        // Subscribe to the original provider event
+        originalProvider.on(eventName, handler);
+      },
+      unsubscribeWalletEvents: async (
+        providerKey: string,
+        eventName: string,
+        listenerId: string
+      ) => {
+        const originalProvider = this.getOriginalProvider(providerKey);
+        const handlerMap = this.eventListeners.get(`${providerKey}:handlers`);
+
+        if (originalProvider && originalProvider.removeListener && handlerMap) {
+          const handler = handlerMap.get(`${eventName}:${listenerId}`);
+          if (handler) {
+            originalProvider.removeListener(eventName, handler);
+            handlerMap.delete(`${eventName}:${listenerId}`);
+          }
+        }
+      },
     };
 
     this.penpalConnection = connect<PenpalChildMethods>({
@@ -348,5 +519,26 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
     });
     // wait for handshake
     this.penpal = await this.penpalConnection.promise;
+  }
+
+  /**
+   * Get the original provider from window object
+   */
+  private getOriginalProvider(providerKey: string): any {
+    const win = window as any;
+
+    // Handle nested providers like bitkeep.ethereum
+    if (providerKey.includes(".")) {
+      const keys = providerKey.split(".");
+      let provider = win;
+      for (const key of keys) {
+        provider = provider?.[key];
+        if (!provider) return null;
+      }
+      return provider;
+    }
+
+    // Handle direct providers
+    return win[providerKey];
   }
 }

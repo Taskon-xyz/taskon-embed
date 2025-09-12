@@ -1,5 +1,4 @@
 import { createSign } from "crypto";
-import { LoginType } from "../login-types";
 
 /**
  * Node.js signature function using crypto module
@@ -7,7 +6,7 @@ import { LoginType } from "../login-types";
  */
 export const signMessage = (
   clientId: string,
-  loginType: LoginType,
+  type: "Email" | "evm",
   account: string,
   privateKey: string
 ): {
@@ -15,7 +14,7 @@ export const signMessage = (
   timestamp: number;
 } => {
   const timestamp = Date.now();
-  const message = `${loginType}|${account}|${clientId}|${timestamp}`;
+  const message = `${type}|${account}|${clientId}|${timestamp}`;
 
   const privateKeyBuffer = Buffer.from(privateKey, "base64");
   const sign = createSign("RSA-SHA256");
