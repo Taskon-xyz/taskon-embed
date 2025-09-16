@@ -1,8 +1,8 @@
 import { EventEmitter } from "eventemitter3";
 import { connect, Connection, RemoteProxy, WindowMessenger } from "penpal";
 import {
+  AuthType,
   LoginParams,
-  LoginType,
   PenpalChildMethods,
   PenpalParentMethods,
   SnsType,
@@ -75,14 +75,14 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
    * ```typescript
    * // Email login
    * await embed.login({
-   *   type: 'email',
+   *   type: 'Email',
    *   account: 'user@example.com',
    *   signature: serverSignature,
    * });
    *
    * // EVM wallet login
    * await embed.login({
-   *   type: 'evm',
+   *   type: 'WalletAddress',
    *   account: '0x1234...',
    *   signature: serverSignature,
    * });
@@ -92,10 +92,10 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
     if (!this.penpal) {
       throw new Error("Not initialized, please call .init() first");
     }
-    if (request.type === "evm") {
+    if (request.type === "WalletAddress") {
       if (!request.provider) {
         throw new Error(
-          "The eip1193 compatible provider is required when login type is evm"
+          "The eip1193 compatible provider is required when login type is WalletAddress"
         );
       }
       this.connectedAddress = request.account;
@@ -104,6 +104,7 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
       this.connectedAddress = "";
       this.connectedProvider = null;
     }
+
     return this.penpal.login({
       type: request.type,
       account: request.account,
@@ -132,13 +133,14 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
    * Get if the user is logged in by iframe, if true, no need to set signature in login request
    */
   public async getIsLoggedIn(
-    loginType: LoginType,
+    authType: AuthType,
     account: string
   ): Promise<boolean> {
     if (!this.penpal) {
       throw new Error("Not initialized, please call .init() first");
     }
-    return this.penpal.getIsLoggedIn(loginType, account);
+
+    return this.penpal.getIsLoggedIn(authType, account);
   }
 
   /**
@@ -200,48 +202,6 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
         height,
         this.iframe.style.height
       );
-    }
-  }
-
-  /**
-   * Track page visit for white label analytics
-   *
-   * @param params - Visit tracking parameters
-   * @param params.sns_id - Social network service ID
-   * @param params.sns_type - Social network service type
-   *
-   * @example
-   * ```typescript
-   * await embed.trackPageVisit({
-   *   sns_id: 'user@example.com',
-   *   sns_type: 'Email'
-   * });
-   * ```
-   */
-  public async trackPageVisit(params: {
-    sns_id: string;
-    sns_type: "Email" | "evm";
-  }): Promise<boolean> {
-    const url = `https://white-label-api-stage.taskon.xyz/whiteLabel/v1/pageVisitCount`;
-
-    try {
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(params),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data.result ?? false;
-    } catch (error) {
-      console.error("Failed to track page visit:", error);
-      return false;
     }
   }
 
@@ -477,8 +437,9 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
         }
 
         // open new tab of the oauth center
+        // todo test oauthToolUrl
         const oauthToolUrl =
-          this.config.oauthToolUrl || "https://generalauthservice.com";
+          this.config.oauthToolUrl || "https://stage.generalauthservice.com";
         const url = new URL(`${oauthToolUrl}${pathMap[snsType]}`);
         url.searchParams.set("state", state);
         url.searchParams.set("from", window.location.href);

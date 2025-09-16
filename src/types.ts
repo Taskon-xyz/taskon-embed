@@ -2,8 +2,8 @@
  * Common types shared between browser and Node.js environments
  */
 
-/** Supported login types */
-export type LoginType = "email" | "evm";
+/** Supported authentication types */
+export type AuthType = "Email" | "WalletAddress";
 
 /**
  * Configuration options for TaskOn embed instance
@@ -23,8 +23,8 @@ export interface TaskOnEmbedConfig {
 
 export interface LoginParams {
   /** Type of login credential */
-  type: LoginType;
-  /** Account (email addresns or EVM address) */
+  type: AuthType;
+  /** Account (email address or EVM address) */
   account: string;
   /** Server-generated signature for authentication, optional when the user is logged in(getIsLoggedIn is true) */
   signature?: string;
@@ -37,7 +37,7 @@ export interface LoginParams {
    */
   username?: string;
   /**
-   * Ethereum eip1193 compatible provider, needed when type is evm
+   * Ethereum eip1193 compatible provider, needed when type is WalletAddress
    */
   provider?: any;
 }
@@ -46,7 +46,7 @@ export interface LoginParams {
  * Login request parameters
  */
 export interface LoginRequest {
-  type: LoginType;
+  type: AuthType;
   account: string;
   signature?: string;
   timestamp?: number;
@@ -60,7 +60,7 @@ export interface AuthUser {
   /** Unique user identifier */
   id: string;
   /** Type of authentication used */
-  type: LoginType;
+  type: AuthType;
   /** User account */
   account: string;
   /** Optional signature for authentication */
@@ -92,16 +92,16 @@ export type PenpalChildMethods = {
   login(request: LoginRequest): Promise<void>;
   /**
    * Logout with email or EVM address
-   * @param loginType - Login type, if not provided, all accounts will be logged out
+   * @param authType - Auth type, if not provided, all accounts will be logged out
    * @param account - Login account, if not provided, all accounts will be logged out
    * @returns Promise that resolves when logout is successful
    */
-  logout(loginType?: LoginType, account?: string): Promise<void>;
+  logout(authType?: AuthType, account?: string): Promise<void>;
   /**
    * Get if the user is logged in
    * @returns Promise that resolves to true if logged in
    */
-  getIsLoggedIn(loginType: LoginType, account: string): boolean;
+  getIsLoggedIn(authType: AuthType, account: string): boolean;
   /**
    * Set iframe internal route
    * @param fullPath - Target route path
