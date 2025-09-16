@@ -13,8 +13,8 @@ hero:
       text: Get Started
       link: /guide/getting-started
     - theme: alt
-      text: View Examples
-      link: /examples/
+      text: Live Demo
+      link: https://github.com/Taskon-xyz/whitelabel-demo-rainbowkit
 
 features:
   - icon: 🎯

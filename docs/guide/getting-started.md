@@ -157,8 +157,9 @@ embed.on("routeChanged", fullPath => {
 - [Configuration Options](/guide/configuration)
 - [Authentication Guide](/guide/authentication)
 - [API Reference](/api/)
+- [Live Demo](https://github.com/Taskon-xyz/whitelabel-demo-rainbowkit) - Working code examples
 
 ## Need Help?
 
 - Check the FAQ or troubleshooting
-- Open a ticket or a [GitHub Issue](https://github.com/taskon/embed-sdk/issues)
+- Open a ticket or a [GitHub Issue](https://github.com/Taskon-xyz/taskon-embed/issues)

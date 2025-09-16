@@ -14,7 +14,10 @@ export default defineConfig({
       { text: "Home", link: "/" },
       { text: "Getting Started", link: "/guide/getting-started" },
       { text: "API Reference", link: "/api/" },
-      { text: "Examples", link: "/examples/" },
+      {
+        text: "Examples",
+        link: "https://github.com/Taskon-xyz/whitelabel-demo-rainbowkit",
+      },
       { text: "GitHub", link: "https://github.com/taskon/embed-sdk" },
     ],
 
@@ -47,19 +50,6 @@ export default defineConfig({
             { text: "Utility Functions", link: "/api/utils" },
             { text: "Conversion Analytics", link: "/api/analytics" },
             { text: "Error Types", link: "/api/errors" },
-          ],
-        },
-      ],
-      "/examples/": [
-        {
-          text: "Examples",
-          items: [
-            { text: "Basic Examples", link: "/examples/" },
-            { text: "Email Authentication", link: "/examples/email-auth" },
-            { text: "Wallet Authentication", link: "/examples/wallet-auth" },
-            { text: "React Integration", link: "/examples/react" },
-            { text: "Vue Integration", link: "/examples/vue" },
-            { text: "Error Handling", link: "/examples/error-handling" },
           ],
         },
       ],

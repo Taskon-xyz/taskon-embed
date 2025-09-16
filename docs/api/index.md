@@ -185,4 +185,4 @@ if (!isLoggedIn) {
 - [Getting Started Guide](/guide/getting-started) - Complete integration walkthrough
 - [Authentication Guide](/guide/authentication) - Authentication implementation details
 - [Configuration Options](/guide/configuration) - All configuration options
-- [Examples](/examples/) - Working code examples
+- [Live Demo](https://github.com/Taskon-xyz/whitelabel-demo-rainbowkit) - Working code examples
