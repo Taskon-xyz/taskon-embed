@@ -62,6 +62,8 @@ When users login to your own system, proactively trigger TaskOn authentication:
 
 ### Email Login
 
+Frontend:
+
 ```typescript
 // When user logs into your system with email
 async function loginToTaskOn(userEmail: string) {
@@ -87,6 +89,8 @@ async function loginToTaskOn(userEmail: string) {
 ```
 
 ### EVM Wallet Login
+
+Frontend:
 
 ```typescript
 // When user connects wallet to your system
@@ -117,6 +121,45 @@ async function loginToTaskOnWithWallet(address: string, provider: any) {
 async function logoutFromTaskOn() {
   await embed.logout();
 }
+```
+
+## Backend (Node.js)
+
+Generate signatures for both email and wallet authentication:
+
+```typescript
+import { signMessage } from "@taskon/embed/node";
+
+// Generate signature for email or wallet authentication
+function getServerSignature(account: string, type: "Email" | "evm") {
+  const clientId = process.env.TASKON_CLIENT_ID!;
+  const privateKey = process.env.TASKON_PRIVATE_KEY!; // Base64 encoded RSA private key
+
+  return signMessage(clientId, type, account, privateKey);
+}
+
+// Example Express.js endpoint
+app.post("/api/taskon/sign", async (req, res) => {
+  const { account, type } = req.body; // type: 'Email' or 'evm'
+
+  // Verify user is authenticated in your system
+  if (!isUserAuthenticated(req)) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  try {
+    const result = signMessage(
+      process.env.TASKON_CLIENT_ID!,
+      type === "Email" ? "Email" : "evm",
+      account,
+      process.env.TASKON_PRIVATE_KEY!
+    );
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: "Signature generation failed" });
+  }
+});
 ```
 
 ## Step 5: Optional - Track Conversion Analytics
