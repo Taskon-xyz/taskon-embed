@@ -18,7 +18,7 @@ export default defineConfig({
         text: "Examples",
         link: "https://github.com/Taskon-xyz/whitelabel-demo-rainbowkit",
       },
-      { text: "GitHub", link: "https://github.com/taskon/embed-sdk" },
+      { text: "GitHub", link: "https://github.com/Taskon-xyz/taskon-embed" },
     ],
 
     sidebar: {
