@@ -52,7 +52,6 @@ await trackVisit("Email", "user@example.com"); // For known users
 const embed = new TaskOnEmbed({
   baseUrl: "https://yourtaskondomain.com",
   containerElement: "#taskon-container",
-  oauthToolUrl: "https://generalauthservice.com", // optional
 });
 
 // Initialize the iframe
@@ -96,7 +95,8 @@ embed.destroy();
 
 <div class="vp-doc">
 
-[Install SDK](/guide/installation){ .vp-button .vp-button-brand }
-[View Examples](/examples/){ .vp-button }
+[Getting Started](/guide/getting-started){ .vp-button .vp-button-brand }
+
+[View Examples](https://github.com/Taskon-xyz/whitelabel-demo-rainbowkit){ .vp-button }
 
 </div>

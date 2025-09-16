@@ -26,10 +26,10 @@ export interface LoginParams {
   type: AuthType;
   /** Account (email address or EVM address) */
   account: string;
-  /** Server-generated signature for authentication, optional when the user is logged in(getIsLoggedIn is true) */
+  /** Server-generated signature for authentication, optional when the user is authorized(isAuthorized is true) */
   signature?: string;
   /**
-   * Timestamp for signature, optional when the user is logged in(getIsLoggedIn is true)
+   * Timestamp for signature, optional when the user is authorized(isAuthorized is true)
    */
   timestamp?: number;
   /**
@@ -40,6 +40,18 @@ export interface LoginParams {
    * Ethereum eip1193 compatible provider, needed when type is WalletAddress
    */
   provider?: any;
+}
+
+/**
+ * Logout options
+ */
+export interface LogoutOptions {
+  /**
+   * Whether to clear authorization cache (default: false)
+   * - false: Only logout current session, keep auth cache for quick re-login (recommended)
+   * - true: Complete logout, clear all authorization cache
+   */
+  clearAuth?: boolean;
 }
 
 /**
@@ -91,17 +103,18 @@ export type PenpalChildMethods = {
    */
   login(request: LoginRequest): Promise<void>;
   /**
-   * Logout with email or EVM address
-   * @param authType - Auth type, if not provided, all accounts will be logged out
-   * @param account - Login account, if not provided, all accounts will be logged out
+   * Logout current user session
+   * @param options - Logout options
    * @returns Promise that resolves when logout is successful
    */
-  logout(authType?: AuthType, account?: string): Promise<void>;
+  logout(options?: LogoutOptions): Promise<void>;
   /**
-   * Get if the user is logged in
-   * @returns Promise that resolves to true if logged in
+   * Check if specified account has valid authorization cache
+   * @param authType - Authentication type
+   * @param account - Account identifier
+   * @returns Promise that resolves to true if account has valid authorization
    */
-  getIsLoggedIn(authType: AuthType, account: string): boolean;
+  isAuthorized(authType: AuthType, account: string): Promise<boolean>;
   /**
    * Set iframe internal route
    * @param fullPath - Target route path

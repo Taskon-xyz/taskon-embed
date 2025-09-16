@@ -88,7 +88,6 @@ The SDK supports OAuth integration for social logins:
 const embed = new TaskOnEmbed({
   baseUrl: "https://yourtaskondomain.com",
   containerElement: "#taskon-container",
-  oauthToolUrl: "https://generalauthservice.com", // OAuth service URL
 });
 
 // The SDK automatically handles OAuth redirects for:
@@ -100,19 +99,27 @@ const embed = new TaskOnEmbed({
 
 ## Session Management
 
-### Check Login Status
+### Check Authorization Status
 
 ```typescript
-// Check email login status
-const emailLoggedIn = await embed.getIsLoggedIn("Email", "user@example.com");
+// Check if email account has valid authorization cache
+const emailAuthorized = await embed.isAuthorized("Email", "user@example.com");
 
-// Check wallet login status
-const walletLoggedIn = await embed.getIsLoggedIn("WalletAddress", "0x1234...");
+// Check if wallet has valid authorization cache
+const walletAuthorized = await embed.isAuthorized("WalletAddress", "0x1234...");
 
-if (emailLoggedIn || walletLoggedIn) {
-  console.log("User is logged in");
+if (emailAuthorized) {
+  // No signature needed for email login
+  await embed.login({ type: "Email", account: "user@example.com" });
 } else {
-  console.log("User is not logged in");
+  // Signature required for email login
+  const { signature, timestamp } = await getServerSignature("user@example.com");
+  await embed.login({
+    type: "Email",
+    account: "user@example.com",
+    signature,
+    timestamp,
+  });
 }
 ```
 
@@ -127,7 +134,19 @@ localStorage.setItem("taskon_last_login_type", "Email");
 ## Logout
 
 ```typescript
-embed.logout();
+// Standard logout - keeps auth cache (recommended)
+await embed.logout();
+
+// Complete logout - clears all authorization cache (use sparingly)
+await embed.logout({ clearAuth: true });
+
+// Multi-account switching
+await embed.logout(); // Keep current user's auth
+await embed.login({
+  type: "Email",
+  account: "another@example.com",
+  // No signature needed if this account was authorized before
+});
 ```
 
 ## Best Practices

@@ -3,6 +3,7 @@ import { connect, Connection, RemoteProxy, WindowMessenger } from "penpal";
 import {
   AuthType,
   LoginParams,
+  LogoutOptions,
   PenpalChildMethods,
   PenpalParentMethods,
   SnsType,
@@ -67,24 +68,39 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
   }
 
   /**
-   * Request login with the email or evm wallet in iframe, listen loginSuccess event to get the login result
+   * Request login with email or EVM wallet. Can be called when already logged in to switch accounts.
+   * Duplicate login with same account will be ignored.
    *
    * @param request - Login request parameters
    *
    * @example
    * ```typescript
-   * // Email login
+   * // Check if authorization is needed
+   * const needsAuth = !(await embed.isAuthorized('Email', 'user@example.com'));
+   *
+   * if (needsAuth) {
+   *   // First time login - signature required
+   *   const { signature, timestamp } = await getServerSignature('user@example.com');
+   *   await embed.login({
+   *     type: 'Email',
+   *     account: 'user@example.com',
+   *     signature,
+   *     timestamp
+   *   });
+   * } else {
+   *   // Already authorized - no signature needed
+   *   await embed.login({
+   *     type: 'Email',
+   *     account: 'user@example.com'
+   *   });
+   * }
+   *
+   * // Cross-account login (switch from userA to userB)
    * await embed.login({
    *   type: 'Email',
-   *   account: 'user@example.com',
-   *   signature: serverSignature,
-   * });
-   *
-   * // EVM wallet login
-   * await embed.login({
-   *   type: 'WalletAddress',
-   *   account: '0x1234...',
-   *   signature: serverSignature,
+   *   account: 'userB@example.com',
+   *   signature: userBSignature,  // Required if userB not authorized
+   *   timestamp: userBTimestamp
    * });
    * ```
    */
@@ -115,24 +131,55 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
   }
 
   /**
-   * Request logout
+   * Request logout from current session
+   *
+   * @param options - Logout options
+   * @param options.clearAuth - Whether to clear authorization cache (default: false)
+   *                             - false: Keep auth cache for quick re-login (recommended for account switching)
+   *                             - true: Clear auth cache completely (use for security-sensitive logout)
    *
    * @example
    * ```typescript
-   * embed.logout();
+   * // Standard logout - keeps auth cache for quick re-login (recommended)
+   * await embed.logout();
+   * // or explicitly
+   * await embed.logout({ clearAuth: false });
+   *
+   * // Complete logout - clears all authorization (use sparingly)
+   * await embed.logout({ clearAuth: true });
    * ```
    */
-  public async logout(): Promise<void> {
+  public async logout(options: LogoutOptions = {}): Promise<void> {
     if (!this.penpal) {
       throw new Error("Not initialized, please call .init() first");
     }
-    return this.penpal.logout();
+    return this.penpal.logout({
+      clearAuth: options.clearAuth ?? false,
+    });
   }
 
   /**
-   * Get if the user is logged in by iframe, if true, no need to set signature in login request
+   * Check if the specified account has valid authorization cache
+   * If true, login() can be called without signature/timestamp
+   *
+   * @param authType - Authentication type ('Email' | 'WalletAddress')
+   * @param account - Account identifier (email address or wallet address)
+   * @returns Promise<boolean> - true if account has valid authorization cache
+   *
+   * @example
+   * ```typescript
+   * const isAuthorized = await embed.isAuthorized('Email', 'user@example.com');
+   * if (isAuthorized) {
+   *   // No signature needed
+   *   await embed.login({ type: 'Email', account: 'user@example.com' });
+   * } else {
+   *   // Signature required
+   *   const { signature, timestamp } = await getServerSignature('user@example.com');
+   *   await embed.login({ type: 'Email', account: 'user@example.com', signature, timestamp });
+   * }
+   * ```
    */
-  public async getIsLoggedIn(
+  public async isAuthorized(
     authType: AuthType,
     account: string
   ): Promise<boolean> {
@@ -140,7 +187,7 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
       throw new Error("Not initialized, please call .init() first");
     }
 
-    return this.penpal.getIsLoggedIn(authType, account);
+    return this.penpal.isAuthorized(authType, account);
   }
 
   /**

@@ -61,13 +61,14 @@ embed.on("routeChanged", fullPath => {
 ### Email Authentication
 
 ```typescript
-// Check if user is already logged in taskon iframe
-const isLoggedIn = await embed.getIsLoggedIn("Email", "user@example.com");
+// Check if user has valid authorization cache
+const isAuthorized = await embed.isAuthorized("Email", "user@example.com");
 
-if (!isLoggedIn) {
+if (!isAuthorized) {
   // Generate signature using your backend
-  const { signature, timestamp } = await generateServerSignature(address);
-  // Login with email (signature required for new sessions)
+  const { signature, timestamp } =
+    await generateServerSignature("user@example.com");
+  // First time login - signature required
   await embed.login({
     type: "Email",
     account: "user@example.com",
@@ -75,7 +76,7 @@ if (!isLoggedIn) {
     timestamp,
   });
 } else {
-  // User is already logged in, signature is optional
+  // User has valid auth cache - no signature needed
   await embed.login({
     type: "Email",
     account: "user@example.com",
@@ -85,7 +86,7 @@ if (!isLoggedIn) {
 
 ### EVM Wallet Authentication
 
-```typescript
+````typescript
 async function connectWallet() {
   if (typeof window.ethereum !== "undefined") {
     try {
@@ -95,14 +96,14 @@ async function connectWallet() {
       });
       const address = accounts[0];
 
-      // Check if already logged in
-      const isLoggedIn = await embed.getIsLoggedIn("WalletAddress", address);
+      // Check if wallet has valid authorization cache
+      const isAuthorized = await embed.isAuthorized("WalletAddress", address);
 
-      if (!isLoggedIn) {
+      if (!isAuthorized) {
         // Generate signature using your backend
         const { signature, timestamp } = await generateServerSignature(address);
 
-        // Login with wallet credentials
+        // First time login - signature required
         await embed.login({
           type: "WalletAddress",
           account: address,
@@ -111,7 +112,7 @@ async function connectWallet() {
           provider: window.ethereum, // Required for wallet operations
         });
       } else {
-        // Already logged in
+        // Has valid auth cache - no signature needed
         await embed.login({
           type: "WalletAddress",
           account: address,
@@ -125,7 +126,6 @@ async function connectWallet() {
     }
   }
 }
-```
 
 ## API Reference
 
@@ -137,7 +137,7 @@ Main class for embedding TaskOn widgets.
 
 ```typescript
 new TaskOnEmbed(config: TaskOnEmbedConfig)
-```
+````
 
 #### Configuration Options
 
@@ -158,9 +158,9 @@ interface TaskOnEmbedConfig {
 init(): Promise<void> // Initialize the iframe
 
 // Authentication
-login(request: LoginParams): Promise<void> // Login with email or EVM wallet
-logout(): Promise<void> // Logout from the iframe
-getIsLoggedIn(authType: AuthType, account: string): Promise<boolean> // Check login status
+login(request: LoginParams): Promise<void> // Login with email or EVM wallet (supports cross-account switching)
+logout(options?: LogoutOptions): Promise<void> // Logout with optional auth cache control
+isAuthorized(authType: AuthType, account: string): Promise<boolean> // Check authorization status
 
 // Navigation
 setRoute(fullPath: string): Promise<void> // Set iframe internal route
@@ -201,10 +201,16 @@ type AuthType = "Email" | "WalletAddress";
 interface LoginParams {
   type: AuthType;
   account: string; // Email address or EVM address
-  signature?: string; // Optional when user is already logged in
+  signature?: string; // Optional when user is authorized (isAuthorized = true)
   timestamp?: number; // Timestamp for signature validation
   username?: string; // Default username for new users
   provider?: any; // EIP-1193 compatible provider (required for WalletAddress)
+}
+
+interface LogoutOptions {
+  clearAuth?: boolean; // Whether to clear authorization cache (default: false)
+  // false: Keep auth cache for quick re-login (recommended)
+  // true: Complete logout, clear all auth cache
 }
 
 interface AuthUser {

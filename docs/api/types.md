@@ -39,10 +39,10 @@ interface LoginParams {
   type: AuthType;
   /** Account (email address or EVM address) */
   account: string;
-  /** Server-generated signature for authentication, optional when the user is logged in(getIsLoggedIn is true) */
+  /** Server-generated signature for authentication, optional when the user is authorized(isAuthorized is true) */
   signature?: string;
   /**
-   * Timestamp for signature, optional when the user is logged in(getIsLoggedIn is true)
+   * Timestamp for signature, optional when the user is authorized(isAuthorized is true)
    */
   timestamp?: number;
   /**
@@ -72,6 +72,21 @@ interface AuthUser {
   signature?: string;
   /** Optional timestamp when signature was created */
   timestamp?: number;
+}
+```
+
+## LogoutOptions
+
+Logout configuration options.
+
+```typescript
+interface LogoutOptions {
+  /**
+   * Whether to clear authorization cache (default: false)
+   * - false: Only logout current session, keep auth cache for quick re-login (recommended)
+   * - true: Complete logout, clear all authorization cache
+   */
+  clearAuth?: boolean;
 }
 ```
 
@@ -157,10 +172,12 @@ type PenpalChildMethods = {
    */
   logout(authType?: AuthType, account?: string): Promise<void>;
   /**
-   * Get if the user is logged in
-   * @returns Promise that resolves to true if logged in
+   * Check if specified account has valid authorization cache
+   * @param authType - Authentication type
+   * @param account - Account identifier
+   * @returns Promise that resolves to true if account has valid authorization
    */
-  getIsLoggedIn(authType: AuthType, account: string): boolean;
+  isAuthorized(authType: AuthType, account: string): Promise<boolean>;
   /**
    * Set iframe internal route
    * @param fullPath - Target route path

@@ -14,7 +14,6 @@ import { TaskOnEmbed } from "@taskon/embed";
 const embed = new TaskOnEmbed({
   baseUrl: "https://yourdomain.com",
   containerElement: "#taskon-container",
-  oauthToolUrl: "https://generalauthservice.com", // optional
 });
 
 // Initialize
@@ -28,11 +27,12 @@ await embed.login({
   timestamp: Date.now(),
 });
 
-// Check login status
-const isLoggedIn = await embed.getIsLoggedIn("Email", "user@example.com");
+// Check authorization status
+const isAuthorized = await embed.isAuthorized("Email", "user@example.com");
 
-// Logout
-await embed.logout();
+// Logout with options
+await embed.logout(); // Keep auth cache (default and recommend)
+// await embed.logout({ clearAuth: true }); // Clear auth cache
 
 // Clean up
 embed.destroy();
@@ -112,21 +112,21 @@ embed.on("routeChanged", fullPath => {
 
 ## Quick Navigation
 
-| Feature        | API                                   | Description                       |
-| -------------- | ------------------------------------- | --------------------------------- |
-| **Initialize** | `new TaskOnEmbed(config)`             | Create embed instance             |
-|                | `embed.init()`                        | Initialize iframe                 |
-| **Auth**       | `embed.login(params)`                 | User authentication               |
-|                | `embed.logout()`                      | User logout                       |
-|                | `embed.getIsLoggedIn(type, account)`  | Check login status                |
-| **Navigation** | `embed.setRoute(path)`                | Set internal route                |
-|                | `embed.currentRoute`                  | Get current route                 |
-| **Management** | `embed.updateSize(width, height)`     | Update iframe size                |
-|                | `embed.destroy()`                     | Clean up resources                |
-| **Events**     | `embed.on('loginRequired', handler)`  | Listen for auth requirements      |
-|                | `embed.on('routeChanged', handler)`   | Listen for route changes          |
-| **Analytics**  | `trackVisit(type?, account?)`         | Conversion tracking (optional)    |
-| **Server**     | `signMessage(id, type, account, key)` | Generate authentication signature |
+| Feature        | API                                   | Description                         |
+| -------------- | ------------------------------------- | ----------------------------------- |
+| **Initialize** | `new TaskOnEmbed(config)`             | Create embed instance               |
+|                | `embed.init()`                        | Initialize iframe                   |
+| **Auth**       | `embed.login(params)`                 | User authentication                 |
+|                | `embed.logout(options?)`              | User logout with auth cache control |
+|                | `embed.isAuthorized(type, account)`   | Check authorization status          |
+| **Navigation** | `embed.setRoute(path)`                | Set internal route                  |
+|                | `embed.currentRoute`                  | Get current route                   |
+| **Management** | `embed.updateSize(width, height)`     | Update iframe size                  |
+|                | `embed.destroy()`                     | Clean up resources                  |
+| **Events**     | `embed.on('loginRequired', handler)`  | Listen for auth requirements        |
+|                | `embed.on('routeChanged', handler)`   | Listen for route changes            |
+| **Analytics**  | `trackVisit(type?, account?)`         | Conversion tracking (optional)      |
+| **Server**     | `signMessage(id, type, account, key)` | Generate authentication signature   |
 
 ## Complete Example
 
@@ -140,7 +140,6 @@ import { TaskOnEmbed, trackVisit } from "@taskon/embed";
 const embed = new TaskOnEmbed({
   baseUrl: "https://yourdomain.com",
   containerElement: "#taskon-container",
-  oauthToolUrl: "https://generalauthservice.com", // optional
 });
 
 // Initialize
@@ -159,9 +158,9 @@ embed.on("routeChanged", fullPath => {
 
 // Login when user authenticates in your system
 const email = "user@example.com";
-const isLoggedIn = await embed.getIsLoggedIn("Email", email);
+const isAuthorized = await embed.isAuthorized("Email", email);
 
-if (!isLoggedIn) {
+if (!isAuthorized) {
   // Get signature from your server
   const { signature, timestamp } = await getServerSignature(email);
 
@@ -170,6 +169,12 @@ if (!isLoggedIn) {
     account: email,
     signature,
     timestamp,
+  });
+} else {
+  // Already authorized, login without signature
+  await embed.login({
+    type: "Email",
+    account: email,
   });
 }
 

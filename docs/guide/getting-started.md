@@ -48,7 +48,6 @@ import { TaskOnEmbed } from "@taskon/embed";
 const embed = new TaskOnEmbed({
   baseUrl: "https://yourdomain.com", // Your domain that resolves to TaskOn
   containerElement: "#taskon-container",
-  oauthToolUrl: "https://generalauthservice.com", // optional
 });
 
 await embed.init();
@@ -66,9 +65,9 @@ When users login to your own system, proactively trigger TaskOn authentication:
 ```typescript
 // When user logs into your system with email
 async function loginToTaskOn(userEmail: string) {
-  const isLoggedIn = await embed.getIsLoggedIn("Email", userEmail);
+  const isAuthorized = await embed.isAuthorized("Email", userEmail);
 
-  if (!isLoggedIn) {
+  if (!isAuthorized) {
     // Generate signature on your server using your private_key
     const { signature, timestamp } = await getServerSignature(userEmail);
 
@@ -92,9 +91,9 @@ async function loginToTaskOn(userEmail: string) {
 ```typescript
 // When user connects wallet to your system
 async function loginToTaskOnWithWallet(address: string, provider: any) {
-  const isLoggedIn = await embed.getIsLoggedIn("WalletAddress", address);
+  const isAuthorized = await embed.isAuthorized("WalletAddress", address);
 
-  if (!isLoggedIn) {
+  if (!isAuthorized) {
     // Generate signature on your server using your private_key
     const { signature, timestamp } = await getServerSignature(address);
 
