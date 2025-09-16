@@ -2,6 +2,13 @@
 
 TaskOn Embed SDK supports two primary authentication methods: Email and EVM wallet. All login requests are made via `embed.login(request)`.
 
+## Overview
+
+The SDK uses `AuthType` enum with two values:
+
+- `"Email"` - Email-based authentication
+- `"WalletAddress"` - EVM wallet address authentication
+
 ## Email Authentication
 
 Email login is the simplest flow and fits most Web2 users.
@@ -10,9 +17,9 @@ Email login is the simplest flow and fits most Web2 users.
 
 ```typescript
 await embed.login({
-  type: "email",
-  value: "user@example.com",
-  signature: serverSignature, // signed by your backend with project secret: value + timestamp
+  type: "Email",
+  account: "user@example.com",
+  signature: serverSignature, // signed by your backend with project secret
   timestamp: Date.now(),
 });
 ```
@@ -20,17 +27,19 @@ await embed.login({
 ### Complete Example
 
 ```typescript
+import { trackVisit } from "@taskon/embed";
+
 async function loginWithEmail(email: string) {
   const timestamp = Date.now();
-  const signature = await fetch("/api/auth/sign", {
+  const { signature } = await fetch("/api/auth/sign", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ value: email, timestamp }),
-  }).then(r => r.text());
+    body: JSON.stringify({ account: email, timestamp }),
+  }).then(r => r.json());
 
   await embed.login({
-    type: "email",
-    value: email,
+    type: "Email",
+    account: email,
     signature,
     timestamp,
   });
@@ -44,36 +53,49 @@ Best for Web3 users, identity is verified via cryptographic signature.
 ### Basic Flow
 
 1. Get the wallet address (via site wallet integration or your own module)
-2. Ask your backend to generate a signature for `value + timestamp`
-3. Call `embed.login({ type: "evm", value, signature, timestamp })`
+2. Ask your backend to generate a signature for `account + timestamp`
+3. Call `embed.login({ type: "WalletAddress", account, signature, timestamp, provider })`
+4. The `provider` parameter is required for wallet operations (EIP-1193 compatible)
 
 ### Complete Example
 
 ```typescript
-async function loginWithWallet(address: string) {
+import { trackVisit } from "@taskon/embed";
+
+async function loginWithWallet(address: string, provider: any) {
   const timestamp = Date.now();
-  const signature = await fetch("/api/auth/sign", {
+  const { signature } = await fetch("/api/auth/sign", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ value: address, timestamp }),
-  }).then(r => r.text());
+    body: JSON.stringify({ account: address, timestamp }),
+  }).then(r => r.json());
 
   await embed.login({
-    type: "evm",
-    value: address,
+    type: "WalletAddress",
+    account: address,
     signature,
     timestamp,
+    provider, // EIP-1193 compatible provider (e.g., window.ethereum)
   });
 }
 ```
 
-### Advanced Wallet Integration
+### OAuth Integration
+
+The SDK supports OAuth integration for social logins:
 
 ```typescript
-embed.on("walletRequest", request => {
-  // Execute site wallet signing/transaction logic based on request.type
-  // The SDK will internally send results back to the iframe
+const embed = new TaskOnEmbed({
+  baseUrl: "https://yourtaskondomain.com",
+  containerElement: "#taskon-container",
+  oauthToolUrl: "https://generalauthservice.com", // OAuth service URL
 });
+
+// The SDK automatically handles OAuth redirects for:
+// - Twitter
+// - Discord
+// - Telegram
+// - Reddit
 ```
 
 ## Session Management
@@ -81,7 +103,13 @@ embed.on("walletRequest", request => {
 ### Check Login Status
 
 ```typescript
-if (embed.getIsLoggedIn()) {
+// Check email login status
+const emailLoggedIn = await embed.getIsLoggedIn("Email", "user@example.com");
+
+// Check wallet login status
+const walletLoggedIn = await embed.getIsLoggedIn("WalletAddress", "0x1234...");
+
+if (emailLoggedIn || walletLoggedIn) {
   console.log("User is logged in");
 } else {
   console.log("User is not logged in");
@@ -91,8 +119,9 @@ if (embed.getIsLoggedIn()) {
 ### Auto Re-login
 
 ```typescript
-// Optionally cache the latest login value/signature (mind security and expiration)
-localStorage.setItem("taskon_last_login_value", "user@example.com");
+// Optionally cache the latest login account/signature (mind security and expiration)
+localStorage.setItem("taskon_last_login_account", "user@example.com");
+localStorage.setItem("taskon_last_login_type", "Email");
 ```
 
 ## Logout
@@ -106,9 +135,16 @@ embed.logout();
 ### 1) Graceful Error Handling
 
 ```typescript
-embed.on("error", err => {
-  console.error("TaskOnEmbed error:", err.message);
-});
+try {
+  await embed.login({
+    type: "Email",
+    account: "user@example.com",
+    signature: "invalid-signature",
+  });
+} catch (error) {
+  console.error("Login failed:", error.message);
+  // Handle login failure
+}
 ```
 
 ### 2) Loading State Management

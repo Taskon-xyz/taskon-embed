@@ -1,6 +1,6 @@
 # API Reference
 
-The TaskOn Embed SDK provides a concise yet powerful API to integrate TaskOn into your application with ease.
+The TaskOn Embed SDK provides a comprehensive API to integrate TaskOn into your application with ease.
 
 ## Core Class
 
@@ -11,136 +11,178 @@ The main embed component class responsible for managing the iframe and user inte
 ```typescript
 import { TaskOnEmbed } from "@taskon/embed";
 
-const embed = new TaskOnEmbed(config);
+const embed = new TaskOnEmbed({
+  baseUrl: "https://yourdomain.com",
+  containerElement: "#taskon-container",
+  oauthToolUrl: "https://generalauthservice.com", // optional
+});
+
+// Initialize
+await embed.init();
+
+// Login
+await embed.login({
+  type: "Email",
+  account: "user@example.com",
+  signature: serverSignature,
+  timestamp: Date.now(),
+});
+
+// Check login status
+const isLoggedIn = await embed.getIsLoggedIn("Email", "user@example.com");
+
+// Logout
+await embed.logout();
+
+// Clean up
+embed.destroy();
 ```
 
 [View detailed docs →](/api/taskon-embed)
 
-## Utility Functions
+## Analytics Function
 
 ### trackVisit()
 
-Track user visits for conversion analytics.
+Optional conversion analytics tracking (only use if needed).
 
 ```typescript
 import { trackVisit } from "@taskon/embed";
 
-await trackVisit({
-  client_id: "your-client-id",
-  sns_type: "email",
-  sns_id: "user@example.com",
-});
+// Only if you need TaskOn conversion rate analysis
+await trackVisit(); // For anonymous users
+// or
+await trackVisit("Email", "user@example.com"); // For known users
 ```
 
 [View Analytics API →](/api/analytics)
 
-### Validation Helpers
+## Node.js Utilities
 
-Input validation helper functions.
+### signMessage()
+
+Server-side signature generation for authentication.
 
 ```typescript
-import { isValidEmail, isValidEthAddress } from "@taskon/embed";
+import { signMessage } from "@taskon/embed/node";
 
-const emailValid = isValidEmail("user@example.com");
-const addressValid = isValidEthAddress("0x...");
+const { signature, timestamp } = signMessage(
+  clientId,
+  "Email", // or "evm" for wallet addresses
+  account,
+  privateKey
+);
 ```
 
-[View Utility Helpers →](/api/utils)
+[View Server Utilities →](/api/utils)
 
 ## Type Definitions
 
 The SDK ships with complete TypeScript type definitions:
 
 ```typescript
-import type { TaskOnEmbedConfig, UserSession, SnsType } from "@taskon/embed";
+import type {
+  TaskOnEmbedConfig,
+  LoginParams,
+  AuthType,
+  AuthUser,
+  TaskOnEmbedEvents,
+} from "@taskon/embed";
 ```
 
 [View Type Definitions →](/api/types)
 
-## Error Handling
+## Event Handling
 
-The SDK provides a complete error handling mechanism:
+The SDK extends EventEmitter for iframe communication:
 
 ```typescript
-import {
-  TaskOnEmbedError,
-  isTaskOnEmbedError,
-  ERROR_CODES,
-} from "@taskon/embed";
+// Listen for authentication requirements
+embed.on("loginRequired", () => {
+  console.log("User authentication required");
+  // Trigger your login flow
+});
 
-try {
-  await embed.login(credentials);
-} catch (error) {
-  if (isTaskOnEmbedError(error)) {
-    console.log("Error code:", error.code);
-  }
-}
+// Listen for route changes
+embed.on("routeChanged", fullPath => {
+  console.log("Route changed to:", fullPath);
+  // Optional: Sync with external URL
+});
 ```
-
-[View Error Handling →](/api/errors)
 
 ## Quick Navigation
 
-| Feature | API                      | Description              |
-| ------- | ------------------------ | ------------------------ |
-| Init    | `new TaskOnEmbed()`      | Create an embed instance |
-| Login   | `embed.login()`          | User authentication      |
-| Logout  | `embed.logout()`         | User logout              |
-| Session | `embed.getUserSession()` | Get user session         |
-| Track   | `trackVisit()`           | Visit analytics          |
+| Feature        | API                                   | Description                       |
+| -------------- | ------------------------------------- | --------------------------------- |
+| **Initialize** | `new TaskOnEmbed(config)`             | Create embed instance             |
+|                | `embed.init()`                        | Initialize iframe                 |
+| **Auth**       | `embed.login(params)`                 | User authentication               |
+|                | `embed.logout()`                      | User logout                       |
+|                | `embed.getIsLoggedIn(type, account)`  | Check login status                |
+| **Navigation** | `embed.setRoute(path)`                | Set internal route                |
+|                | `embed.currentRoute`                  | Get current route                 |
+| **Management** | `embed.updateSize(width, height)`     | Update iframe size                |
+|                | `embed.destroy()`                     | Clean up resources                |
+| **Events**     | `embed.on('loginRequired', handler)`  | Listen for auth requirements      |
+|                | `embed.on('routeChanged', handler)`   | Listen for route changes          |
+| **Analytics**  | `trackVisit(type?, account?)`         | Conversion tracking (optional)    |
+| **Server**     | `signMessage(id, type, account, key)` | Generate authentication signature |
 
-## Examples
-
-### Basic Usage
+## Complete Example
 
 ```typescript
 import { TaskOnEmbed, trackVisit } from "@taskon/embed";
 
+// Optional: Track page visit for conversion analytics
+// await trackVisit(); // For anonymous users
+
 // Create instance
 const embed = new TaskOnEmbed({
-  client_id: "your-client-id",
-  parentElement: "#container",
-  onVerifyTaskSuccess: taskId => {
-    console.log(`Task ${taskId} completed`);
-  },
+  baseUrl: "https://yourdomain.com",
+  containerElement: "#taskon-container",
+  oauthToolUrl: "https://generalauthservice.com", // optional
 });
 
-// User login
-await embed.login({
-  sns_type: "email",
-  sns_id: "user@example.com",
+// Initialize
+await embed.init();
+
+// Set up event listeners
+embed.on("loginRequired", async () => {
+  // Trigger your login flow when TaskOn requires authentication
+  console.log("Authentication required");
 });
 
-// Get user session
-const session = embed.getUserSession();
-console.log("Logged in:", session.isLoggedIn);
-```
+embed.on("routeChanged", fullPath => {
+  console.log("Route changed to:", fullPath);
+  // Optional: Sync with your external URL
+});
 
-### Error Handling
+// Login when user authenticates in your system
+const email = "user@example.com";
+const isLoggedIn = await embed.getIsLoggedIn("Email", email);
 
-```typescript
-import { isTaskOnEmbedError, ERROR_CODES } from "@taskon/embed";
+if (!isLoggedIn) {
+  // Get signature from your server
+  const { signature, timestamp } = await getServerSignature(email);
 
-try {
-  await embed.login(credentials);
-} catch (error) {
-  if (isTaskOnEmbedError(error)) {
-    switch (error.code) {
-      case ERROR_CODES.INVALID_EMAIL:
-        showError("Invalid email format");
-        break;
-      case ERROR_CODES.IFRAME_NOT_READY:
-        showError("The component isn't ready yet. Please retry later.");
-        break;
-      default:
-        showError(error.message);
-    }
-  }
+  await embed.login({
+    type: "Email",
+    account: email,
+    signature,
+    timestamp,
+  });
 }
+
+// Logout when needed
+// await embed.logout();
+
+// Clean up when component unmounts
+// embed.destroy();
 ```
 
-## Version
+## Learn More
 
-Docs version: `v0.1.0`
-
-See the [CHANGELOG](https://github.com/taskon/embed-sdk/blob/main/CHANGELOG.md) for updates.
+- [Getting Started Guide](/guide/getting-started) - Complete integration walkthrough
+- [Authentication Guide](/guide/authentication) - Authentication implementation details
+- [Configuration Options](/guide/configuration) - All configuration options
+- [Examples](/examples/) - Working code examples

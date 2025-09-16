@@ -24,8 +24,8 @@ features:
     title: Multiple Authentication
     details: Support for both email and EVM wallet authentication to meet different user needs
   - icon: 📊
-    title: Analytics
-    details: Built-in visit tracking and task completion statistics to help business decisions
+    title: Conversion Analytics
+    details: Optional visit tracking for conversion rate analysis (only use if needed)
   - icon: 🔧
     title: TypeScript
     details: Complete type definitions and documentation for the best developer experience
@@ -42,29 +42,39 @@ features:
 ```typescript
 import { TaskOnEmbed, trackVisit } from "@taskon/embed";
 
-// Optional: conversion analytics. If you need conversion stats,
-// call this on every visit to your own pages; otherwise, you can skip it.
-trackVisit({
-  client_id: "your-client-id",
-  sns_type: "email",
-  sns_id: "user@example.com",
-});
+// Optional: Track page visits for TaskOn conversion analytics
+// Only use if you need conversion rate analysis
+await trackVisit(); // For anonymous users
+// or
+await trackVisit("Email", "user@example.com"); // For known users
 
 // Initialize
 const embed = new TaskOnEmbed({
-  clientId: "your-client-id",
   baseUrl: "https://yourtaskondomain.com",
   containerElement: "#taskon-container",
+  oauthToolUrl: "https://generalauthservice.com", // optional
 });
 
-// get signature from your server
-const { signature, timestamp } = getSignature();
+// Initialize the iframe
+await embed.init();
 
-await embed.login({
-  type: "email",
-  value: "user@example.com",
-  signature,
-  timestamp,
+// Handle login requirement
+embed.on("loginRequired", async () => {
+  // Get signature from your server
+  const { signature, timestamp } = await getSignature();
+
+  await embed.login({
+    type: "Email",
+    account: "user@example.com",
+    signature,
+    timestamp,
+  });
+});
+
+// Handle route changes
+embed.on("routeChanged", fullPath => {
+  // Sync internal route with external URL if needed
+  console.log("Route changed:", fullPath);
 });
 
 // Logout

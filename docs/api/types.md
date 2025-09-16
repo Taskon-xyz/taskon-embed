@@ -1,6 +1,6 @@
 # Type Definitions
 
-This document describes the public types of the latest `TaskOnEmbed`.
+This document describes the public types of the TaskOn Embed SDK.
 
 ## TaskOnEmbedConfig
 
@@ -8,39 +8,51 @@ Configuration options for TaskOn embed instance.
 
 ```typescript
 interface TaskOnEmbedConfig {
-  /** Client ID provided by TaskOn for authentication */
-  clientId: string;
   /** Base URL of the TaskOn service */
   baseUrl: string;
   /** CSS selector string or HTMLElement where the embed should be rendered */
   containerElement: string | HTMLElement;
-  /** Width of the embed iframe (CSS units or pixel number) */
+  /** Width of the embed iframe (CSS units or pixel number) - default: '100%' */
   width?: string | number;
-  /** Height of the embed iframe (CSS units or pixel number) */
+  /** Height of the embed iframe (CSS units or pixel number) - default: '100%' */
   height?: string | number;
+  /** OAuth tool URL for handling OAuth in white-label mode (default: 'https://generalauthservice.com') */
+  oauthToolUrl?: string;
 }
 ```
 
-## LoginType
+## AuthType
 
-Supported login types.
+Supported authentication types.
 
 ```typescript
-type LoginType = "email" | "evm";
+type AuthType = "Email" | "WalletAddress";
 ```
 
-## LoginRequest
+## LoginParams
 
 Login request parameters.
 
 ```typescript
-interface LoginRequest {
+interface LoginParams {
   /** Type of login credential */
-  type: LoginType;
-  /** The credential value (email address or EVM address) */
-  value: string;
-  /** Server-generated signature for authentication (optional when user is logged in) */
+  type: AuthType;
+  /** Account (email address or EVM address) */
+  account: string;
+  /** Server-generated signature for authentication, optional when the user is logged in(getIsLoggedIn is true) */
   signature?: string;
+  /**
+   * Timestamp for signature, optional when the user is logged in(getIsLoggedIn is true)
+   */
+  timestamp?: number;
+  /**
+   * Default username for new user(optional)
+   */
+  username?: string;
+  /**
+   * Ethereum eip1193 compatible provider, needed when type is WalletAddress
+   */
+  provider?: any;
 }
 ```
 
@@ -53,9 +65,9 @@ interface AuthUser {
   /** Unique user identifier */
   id: string;
   /** Type of authentication used */
-  type: LoginType;
-  /** User credential value */
-  value: string;
+  type: AuthType;
+  /** User account */
+  account: string;
   /** Optional signature for authentication */
   signature?: string;
   /** Optional timestamp when signature was created */
@@ -70,9 +82,58 @@ Event handlers for TaskOn embed instance.
 ```typescript
 interface TaskOnEmbedEvents {
   /** Fired when iframe requests user login */
-  loginRequired: (data: { type?: LoginType }) => void;
-  /** Fired when a task is completed */
-  taskCompleted: (task: any, taskOnUserId: number) => void;
+  loginRequired: () => void;
+  /** Fired when iframe route changes */
+  routeChanged: (fullPath: string) => void;
+}
+```
+
+## Additional Types
+
+### SnsType
+
+Supported OAuth provider types.
+
+```typescript
+type SnsType = "twitter" | "discord" | "telegram" | "reddit";
+```
+
+### WalletProviders
+
+Available wallet providers detected in parent window.
+
+```typescript
+interface WalletProviders {
+  ethereum?: ProviderProxyMethods;
+  okxwallet?: ProviderProxyMethods;
+  onto?: ProviderProxyMethods;
+  bitkeep?: { ethereum?: ProviderProxyMethods };
+  [key: string]: any;
+}
+```
+
+### ProviderProxyMethods
+
+EVM Provider proxy methods for wallet operations.
+
+```typescript
+interface ProviderProxyMethods {
+  /**
+   * Request wallet operation (eth_requestAccounts, personal_sign, etc.)
+   */
+  request(args: { method: string; params?: any[] }): Promise<any>;
+  /**
+   * Add event listener for provider events (accountsChanged, chainChanged, etc.)
+   */
+  on(eventName: string, listener: (...args: any[]) => void): void;
+  /**
+   * Remove event listener
+   */
+  removeListener(eventName: string, listener: (...args: any[]) => void): void;
+  /**
+   * Check if connected
+   */
+  isConnected?(): boolean;
 }
 ```
 
@@ -82,12 +143,34 @@ Penpal methods of child iframe (internal use).
 
 ```typescript
 type PenpalChildMethods = {
-  /** Login with email or EVM address */
+  /**
+   * Login with email or EVM address
+   * @param request - Login request
+   * @returns Promise that resolves when login is successful
+   */
   login(request: LoginRequest): Promise<void>;
-  /** Logout with email or EVM address */
-  logout(loginType?: LoginType, value?: string): Promise<void>;
-  /** Get if the user is logged in */
-  getIsLoggedIn(loginType: LoginType, value: string): boolean;
+  /**
+   * Logout with email or EVM address
+   * @param authType - Auth type, if not provided, all accounts will be logged out
+   * @param account - Login account, if not provided, all accounts will be logged out
+   * @returns Promise that resolves when logout is successful
+   */
+  logout(authType?: AuthType, account?: string): Promise<void>;
+  /**
+   * Get if the user is logged in
+   * @returns Promise that resolves to true if logged in
+   */
+  getIsLoggedIn(authType: AuthType, account: string): boolean;
+  /**
+   * Set iframe internal route
+   * @param fullPath - Target route path
+   */
+  setRoute(fullPath: string): Promise<void>;
+  /**
+   * Setup wallet providers in iframe
+   * @param providerKeys - Array of available provider keys
+   */
+  setupWalletProviders(providerKeys: string[]): Promise<void>;
 };
 ```
 
@@ -97,7 +180,47 @@ Penpal methods of parent window (internal use).
 
 ```typescript
 type PenpalParentMethods = {
-  /** Request login from parent */
+  /**
+   * Request parent to login
+   */
   requestLogin(): Promise<void>;
+  /**
+   * Request parent to oauth
+   * @param snsType - OAuth provider name
+   * @param state - Unique identifier for the request
+   */
+  requestOauth(snsType: SnsType, state: string): void;
+  /**
+   * Request signature verification for EVM login
+   */
+  requestSignVerify(hexMessage: string): Promise<string>;
+  /**
+   * Notify parent when iframe route changes
+   */
+  onRouteChange(fullPath: string): void;
+  /**
+   * Request wallet provider operation
+   */
+  requestWalletProvider(
+    providerKey: string,
+    method: string,
+    params?: any[]
+  ): Promise<any>;
+  /**
+   * Subscribe to wallet provider events
+   */
+  subscribeWalletEvents(
+    providerKey: string,
+    eventName: string,
+    listenerId: string
+  ): Promise<void>;
+  /**
+   * Unsubscribe from wallet provider events
+   */
+  unsubscribeWalletEvents(
+    providerKey: string,
+    eventName: string,
+    listenerId: string
+  ): Promise<void>;
 };
 ```

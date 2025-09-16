@@ -5,6 +5,7 @@ export default defineConfig({
   description:
     "White-label TaskOn service SDK - Simple integration of TaskOn into your website",
   lang: "en-US",
+  base: "/taskon-embed/", // GitHub repository name
 
   themeConfig: {
     logo: "/logo.svg",
@@ -44,7 +45,7 @@ export default defineConfig({
             { text: "TaskOnEmbed Class", link: "/api/taskon-embed" },
             { text: "Type Definitions", link: "/api/types" },
             { text: "Utility Functions", link: "/api/utils" },
-            { text: "Analytics", link: "/api/analytics" },
+            { text: "Conversion Analytics", link: "/api/analytics" },
             { text: "Error Types", link: "/api/errors" },
           ],
         },
@@ -65,7 +66,7 @@ export default defineConfig({
     },
 
     socialLinks: [
-      { icon: "github", link: "https://github.com/taskon/embed-sdk" },
+      { icon: "github", link: "https://github.com/Taskon-xyz/taskon-embed" },
     ],
 
     footer: {
@@ -78,7 +79,8 @@ export default defineConfig({
     },
 
     editLink: {
-      pattern: "https://github.com/taskon/embed-sdk/edit/main/docs/:path",
+      pattern:
+        "https://github.com/Taskon-xyz/taskon-embed/edit/main/docs/:path",
       text: "Edit this page on GitHub",
     },
 
