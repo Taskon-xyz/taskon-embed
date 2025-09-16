@@ -80,7 +80,7 @@ export default defineConfig({
 
     editLink: {
       pattern:
-        "https://github.com/Taskon-xyz/taskon-embed/edit/main/docs/:path",
+        "https://github.com/Taskon-xyz/taskon-embed/edit/master/docs/:path",
       text: "Edit this page on GitHub",
     },
 
