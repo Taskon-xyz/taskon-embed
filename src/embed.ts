@@ -204,6 +204,48 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
   }
 
   /**
+   * Track page visit for white label analytics
+   *
+   * @param params - Visit tracking parameters
+   * @param params.sns_id - Social network service ID
+   * @param params.sns_type - Social network service type
+   *
+   * @example
+   * ```typescript
+   * await embed.trackPageVisit({
+   *   sns_id: 'user@example.com',
+   *   sns_type: 'Email'
+   * });
+   * ```
+   */
+  public async trackPageVisit(params: {
+    sns_id: string;
+    sns_type: "Email" | "evm";
+  }): Promise<boolean> {
+    const url = `https://white-label-api-stage.taskon.xyz/whiteLabel/v1/pageVisitCount`;
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(params),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.result ?? false;
+    } catch (error) {
+      console.error("Failed to track page visit:", error);
+      return false;
+    }
+  }
+
+  /**
    * Destroys the embed instance and cleans up all resources
    *
    * @example
@@ -379,6 +421,18 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
     iframe.style.height = this.resolveSize(this.config.height, "100%");
     iframe.style.border = "none";
     iframe.allow = "clipboard-write";
+
+    // Add sandbox attributes to allow popups
+    // This enables links to open in new tabs/windows from within the iframe
+    iframe.sandbox.add(
+      "allow-scripts", // Allow JavaScript execution
+      "allow-same-origin", // Allow same-origin access
+      "allow-forms", // Allow form submission
+      "allow-popups", // Allow opening new windows
+      "allow-popups-to-escape-sandbox", // New windows are not sandboxed
+      "allow-storage-access-by-user-activation", // Allow storage access
+      "allow-modals" // Allow alert/confirm/prompt
+    );
 
     return iframe;
   }
