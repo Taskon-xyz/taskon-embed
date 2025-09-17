@@ -7,6 +7,7 @@ import {
   PenpalChildMethods,
   PenpalParentMethods,
   SnsType,
+  TaskCompletedData,
   TaskOnEmbedConfig,
   TaskOnEmbedEvents,
 } from "./types";
@@ -466,6 +467,9 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
     const methods: PenpalParentMethods = {
       requestLogin: async () => {
         this.emit("loginRequired");
+      },
+      onTaskCompleted: (data: TaskCompletedData) => {
+        this.emit("taskCompleted", data);
       },
       requestOauth: (snsType, state) => {
         const pathMap: Record<SnsType, string> = {

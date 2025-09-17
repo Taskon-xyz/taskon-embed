@@ -191,6 +191,24 @@ embed.on("routeChanged", (fullPath: string) => {
   // Optional: Sync with external URL routing
   // window.history.replaceState(null, '', `/embed${fullPath}`);
 });
+
+// Task completed event - triggered when user completes a task
+embed.on("taskCompleted", data => {
+  console.log("Task completed:", data);
+  // data contains: { taskId, taskName, templateId, rewards[] }
+
+  // Display rewards (if any)
+  if (data.rewards.length > 0) {
+    data.rewards.forEach(reward => {
+      console.log(`You earned: ${reward.rewardDescription}`);
+    });
+  } else {
+    console.log("Task completed without rewards");
+  }
+
+  // Optional: Track completion or update application state
+  // analytics.track('task_completed', data);
+});
 ```
 
 #### Types

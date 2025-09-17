@@ -177,7 +177,7 @@ await trackVisit("Email", "user@example.com"); // For known users
 
 ## Step 6: Listen to Events
 
-Handle authentication requirements and route changes:
+Handle authentication requirements, route changes, and task completion:
 
 ```typescript
 // Handle authentication requirement from iframe
@@ -191,6 +191,33 @@ embed.on("routeChanged", fullPath => {
   console.log("TaskOn route changed to:", fullPath);
   // Optional: Sync with your external URL
   // window.history.replaceState(null, '', `/taskon${fullPath}`);
+});
+
+// Handle task completion events
+embed.on("taskCompleted", data => {
+  console.log("Task completed:", data);
+  // data contains: taskId, taskName, templateId, rewards[]
+
+  // Check if task has rewards
+  if (data.rewards.length > 0) {
+    data.rewards.forEach(reward => {
+      console.log(`Reward: ${reward.rewardDescription}`);
+
+      if (reward.rewardType === "GTCPoints") {
+        console.log(`Earned ${reward.rewardAmount} ${reward.pointName} points`);
+      } else if (reward.rewardType === "Token") {
+        console.log(`Earned ${reward.rewardAmount} ${reward.pointName} tokens`);
+        console.log(
+          `Contract: ${reward.tokenAddress}, Network: ${reward.tokenNetwork}`
+        );
+      }
+    });
+  } else {
+    console.log("Task completed without rewards");
+  }
+
+  // Optional: Track user engagement or update your application state
+  // analytics.track('task_completed', data);
 });
 ```
 

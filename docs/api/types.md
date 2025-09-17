@@ -90,6 +90,44 @@ interface LogoutOptions {
 }
 ```
 
+## TaskReward
+
+Task reward information.
+
+```typescript
+interface TaskReward {
+  /** Type of reward */
+  rewardType: "Token" | "GTCPoints";
+  /** Amount of reward */
+  rewardAmount: string;
+  /** Name of points/token (optional) */
+  pointName?: string;
+  /** Human readable reward description (e.g., "100 XPoints", "100 USDT") */
+  rewardDescription: string;
+  /** Token contract address (if applicable) */
+  tokenAddress?: string;
+  /** Blockchain network (if applicable) */
+  tokenNetwork?: string;
+}
+```
+
+## TaskCompletedData
+
+Task completion event data structure.
+
+```typescript
+interface TaskCompletedData {
+  /** Task identifier */
+  taskId: string;
+  /** Task name/title */
+  taskName: string;
+  /** Task template identifier */
+  templateId: string;
+  /** Array of rewards (can be empty) */
+  rewards: TaskReward[];
+}
+```
+
 ## TaskOnEmbedEvents
 
 Event handlers for TaskOn embed instance.
@@ -100,6 +138,8 @@ interface TaskOnEmbedEvents {
   loginRequired: () => void;
   /** Fired when iframe route changes */
   routeChanged: (fullPath: string) => void;
+  /** Fired when user completes a task */
+  taskCompleted: (data: TaskCompletedData) => void;
 }
 ```
 

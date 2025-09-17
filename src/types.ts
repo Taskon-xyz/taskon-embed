@@ -82,6 +82,38 @@ export interface AuthUser {
 }
 
 /**
+ * Task reward information
+ */
+export interface TaskReward {
+  /** Type of reward */
+  rewardType: "Token" | "GTCPoints";
+  /** Amount of reward */
+  rewardAmount: string;
+  /** Name of points/token (optional) */
+  pointName?: string;
+  /** Human readable reward description (e.g., "100 XPoints", "100 USDT") */
+  rewardDescription: string;
+  /** Token contract address (if applicable) */
+  tokenAddress?: string;
+  /** Blockchain network (if applicable) */
+  tokenNetwork?: string;
+}
+
+/**
+ * Task completion event data
+ */
+export interface TaskCompletedData {
+  /** Task identifier */
+  taskId: string;
+  /** Task name/title */
+  taskName: string;
+  /** Task template identifier */
+  templateId: string;
+  /** Array of rewards (can be empty) */
+  rewards: TaskReward[];
+}
+
+/**
  * Event handlers for TaskOn embed instance
  */
 export interface TaskOnEmbedEvents {
@@ -89,6 +121,8 @@ export interface TaskOnEmbedEvents {
   loginRequired: () => void;
   /** Fired when iframe route changes */
   routeChanged: (fullPath: string) => void;
+  /** Fired when user completes a task */
+  taskCompleted: (data: TaskCompletedData) => void;
 }
 
 /**
@@ -180,6 +214,10 @@ export type PenpalParentMethods = {
    * Request parent to login
    */
   requestLogin(): Promise<void>;
+  /**
+   * Notify parent when task is completed
+   */
+  onTaskCompleted(data: TaskCompletedData): void;
   /**
    * Request parent to oauth
    * @param snsType - OAuth provider name
