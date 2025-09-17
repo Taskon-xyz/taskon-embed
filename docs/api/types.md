@@ -123,7 +123,10 @@ interface TaskCompletedData {
   taskName: string;
   /** Task template identifier */
   templateId: string;
-  /** Array of rewards (can be empty) */
+  /**
+   * The rewards of the task.
+   * Note: For tasks requiring review (e.g., PoW tasks), the rewards may not be granted yet
+   */
   rewards: TaskReward[];
 }
 ```
