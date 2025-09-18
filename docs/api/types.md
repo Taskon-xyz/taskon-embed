@@ -234,6 +234,29 @@ type PenpalChildMethods = {
 };
 ```
 
+## WebhookPayload
+
+Webhook payload sent when a user receives a reward.
+
+```typescript
+interface WebhookPayload {
+  /** Unique identifier of the completed task */
+  task_id: number;
+  /** Type of reward distributed */
+  reward_type: "Token" | "GTCPoints";
+  /** Numeric amount of reward distributed */
+  reward_amount: string;
+  /** Token contract address (only for Token rewards) */
+  token_contract?: string;
+  /** Token symbol (only for Token rewards) */
+  token_symbol?: string;
+  /** Blockchain network (only for Token rewards) */
+  token_network?: string;
+  /** Name of the point system (only for GTCPoints rewards) */
+  point_name?: string;
+}
+```
+
 ## PenpalParentMethods
 
 Penpal methods of parent window (internal use).

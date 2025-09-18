@@ -34,6 +34,7 @@ export default defineConfig({
             { text: "Installation", link: "/guide/installation" },
             { text: "Configuration", link: "/guide/configuration" },
             { text: "Authentication", link: "/guide/authentication" },
+            { text: "Webhooks", link: "/guide/webhooks" },
             { text: "Event Handling", link: "/guide/events" },
             { text: "Error Handling", link: "/guide/error-handling" },
             { text: "Best Practices", link: "/guide/best-practices" },
