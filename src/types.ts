@@ -19,6 +19,8 @@ export interface TaskOnEmbedConfig {
   height?: string | number;
   /** OAuth tool URL for handling OAuth in white-label mode (default: 'https://generalauthservice.com') */
   oauthToolUrl?: string;
+  /** Language to use when loading the embed. Common values: 'en', 'ko', 'ru', 'es', 'ja' */
+  language?: string;
 }
 
 export interface LoginParams {
@@ -157,6 +159,11 @@ export type PenpalChildMethods = {
    * @param fullPath - Target route path
    */
   setRoute(fullPath: string): Promise<void>;
+  /**
+   * Set language for the iframe
+   * @param language - Language key (e.g., 'en', 'ko', 'ru', 'es', 'ja'). Fallback to 'en' if not supported
+   */
+  setLanguage(language: string): Promise<void>;
   /**
    * Setup wallet providers in iframe
    * @param providerKeys - Array of available provider keys

@@ -1,120 +1,147 @@
 # Configuration
 
-TaskOn Embed SDK provides simple configuration options focused on core functionality implementation.
+TaskOn Embed SDK provides flexible configuration options for seamless integration.
 
 ## Configuration Interface
 
 ```typescript
 interface TaskOnEmbedConfig {
-  client_id: string; // Your TaskOn client ID (required)
-  parentElement: string | HTMLElement; // Container element
-  baseUrl?: string; // TaskOn platform URL
-  allowSwitchNetwork?: boolean; // Allow network switching
-  onConnect?: () => void; // Wallet connection callback
-  onVerifyTaskSuccess?: (taskId: number, taskData?: any) => void; // Task completion callback
+  /** Base URL of the TaskOn service */
+  baseUrl: string;
+  /** CSS selector string or HTMLElement where the embed should be rendered */
+  containerElement: string | HTMLElement;
+  /** Width of the embed iframe (CSS units or pixel number) - default: '100%' */
+  width?: string | number;
+  /** Height of the embed iframe (CSS units or pixel number) - default: '100%' */
+  height?: string | number;
+  /** OAuth tool URL for handling OAuth in white-label mode (default: 'https://generalauthservice.com') */
+  oauthToolUrl?: string;
+  /** Language to use when loading the embed. Common values: 'en', 'ko', 'ru', 'es', 'ja' */
+  language?: string;
 }
 ```
 
 ## Required Configuration
 
-### client_id
+### baseUrl
 
-Your TaskOn application client ID, obtained from [TaskOn Developer Console](https://taskon.xyz/developer).
+The base URL of your TaskOn service or white-label domain.
 
 ```typescript
-const taskOnEmbed = new TaskOnEmbed({
-  client_id: "your-client-id", // Required
-  parentElement: "#container",
+const embed = new TaskOnEmbed({
+  baseUrl: "https://taskon.xyz", // Production
+  containerElement: "#container",
+});
+
+// Or for staging/custom domain
+const embed = new TaskOnEmbed({
+  baseUrl: "https://staging.taskon.xyz",
+  containerElement: "#container",
 });
 ```
 
-### parentElement
+### containerElement
 
 Specify the container element for embedding TaskOn iframe, can be a CSS selector string or HTMLElement object.
 
 ```typescript
 // Using CSS selector
-const taskOnEmbed = new TaskOnEmbed({
-  client_id: "your-client-id",
-  parentElement: "#taskon-container", // Recommended
+const embed = new TaskOnEmbed({
+  baseUrl: "https://taskon.xyz",
+  containerElement: "#taskon-container", // Recommended
 });
 
 // Using DOM element
 const container = document.getElementById("taskon-container");
-const taskOnEmbed = new TaskOnEmbed({
-  client_id: "your-client-id",
-  parentElement: container,
+const embed = new TaskOnEmbed({
+  baseUrl: "https://taskon.xyz",
+  containerElement: container,
 });
 ```
 
 ## Optional Configuration
 
-### baseUrl
+### width and height
 
-Specify TaskOn platform URL, defaults to production environment.
+Customize the iframe dimensions. Supports CSS units or pixel numbers.
 
 ```typescript
-const taskOnEmbed = new TaskOnEmbed({
-  client_id: "your-client-id",
-  parentElement: "#container",
-  baseUrl: "https://staging.taskon.xyz", // Staging environment
+const embed = new TaskOnEmbed({
+  baseUrl: "https://taskon.xyz",
+  containerElement: "#container",
+  width: "100%", // Default
+  height: 600, // Pixel number
+});
+
+// Responsive sizing
+const embed = new TaskOnEmbed({
+  baseUrl: "https://taskon.xyz",
+  containerElement: "#container",
+  width: "100%",
+  height: "70vh", // 70% of viewport height
 });
 ```
 
-### allowSwitchNetwork
+### language
 
-Whether to allow TaskOn to actively request network switching, defaults to `false`.
+Set the initial language for the embed interface. TaskOn supports multiple languages including English, Korean, Japanese, Russian, and Spanish.
 
 ```typescript
-const taskOnEmbed = new TaskOnEmbed({
-  client_id: "your-client-id",
-  parentElement: "#container",
-  allowSwitchNetwork: true, // Allow network switching
+const embed = new TaskOnEmbed({
+  baseUrl: "https://taskon.xyz",
+  containerElement: "#container",
+  language: "ko", // Korean
+});
+
+// Common language codes
+const embed = new TaskOnEmbed({
+  baseUrl: "https://taskon.xyz",
+  containerElement: "#container",
+  language: "ja", // Japanese
 });
 ```
 
-## Event Callbacks
+**Supported Languages:**
 
-### onConnect
+- `en` - English (default)
+- `ko` - Korean (한국어)
+- `ja` - Japanese (日本語)
+- `ru` - Russian (Русский)
+- `es` - Spanish (Español)
 
-Triggered when user requests wallet connection inside TaskOn.
+### oauthToolUrl
+
+For white-label deployments, specify a custom OAuth service URL.
 
 ```typescript
-const taskOnEmbed = new TaskOnEmbed({
-  client_id: "your-client-id",
-  parentElement: "#container",
-  onConnect: () => {
-    console.log("User requests wallet connection");
-    // Handle wallet connection logic here
-    connectWallet();
-  },
+const embed = new TaskOnEmbed({
+  baseUrl: "https://your-domain.com",
+  containerElement: "#container",
+  oauthToolUrl: "https://oauth.your-domain.com", // Custom OAuth service
 });
-
-async function connectWallet() {
-  // Your wallet connection code
-}
 ```
 
-### onVerifyTaskSuccess
+## Event Handling
 
-Triggered when user successfully completes task verification.
+Events are handled using the `.on()` method after initialization. See the [API documentation](/api/taskon-embed) for available events.
 
 ```typescript
-const taskOnEmbed = new TaskOnEmbed({
-  client_id: "your-client-id",
-  parentElement: "#container",
-  onVerifyTaskSuccess: (taskId, taskData) => {
-    console.log(`Task ${taskId} completed!`);
+const embed = new TaskOnEmbed({
+  baseUrl: "https://taskon.xyz",
+  containerElement: "#container",
+});
 
-    // Send custom analytics event
-    analytics.track("task_completed", {
-      task_id: taskId,
-      points: taskData?.points,
-    });
+await embed.init();
 
-    // Show celebration animation
-    showCelebration();
-  },
+// Handle login requests
+embed.on("loginRequired", () => {
+  console.log("User needs to login");
+  // Implement your login flow
+});
+
+// Handle task completion
+embed.on("taskCompleted", data => {
+  console.log("Task completed:", data);
 });
 ```
 
@@ -142,32 +169,47 @@ For best display results, it's recommended to set appropriate styles for the con
 ## Complete Configuration Example
 
 ```typescript
-import { TaskOnEmbed, trackVisit } from "@taskon/embed";
+import { TaskOnEmbed } from "@taskon/embed";
 
-// Initialize configuration
-const taskOnEmbed = new TaskOnEmbed({
+// Initialize with full configuration
+const embed = new TaskOnEmbed({
   // Required configuration
-  client_id: "your-client-id",
-  parentElement: "#taskon-container",
+  baseUrl: "https://taskon.xyz",
+  containerElement: "#taskon-container",
 
   // Optional configuration
-  baseUrl: "https://taskon.xyz",
-  allowSwitchNetwork: true,
+  width: "100%",
+  height: 600,
+  language: "ko", // Korean interface
+  oauthToolUrl: "https://oauth.taskon.xyz",
+});
 
-  // Event callbacks
-  onConnect: () => {
-    console.log("Wallet connection requested");
-  },
+// Initialize the embed
+await embed.init();
 
-  onVerifyTaskSuccess: (taskId, taskData) => {
-    console.log(`Task ${taskId} verification successful`, taskData);
+// Set up event listeners
+embed.on("loginRequired", () => {
+  console.log("Login required");
+  // Handle user authentication
+});
 
-    // Send notification
-    showNotification(`Congratulations on completing task ${taskId}!`);
+embed.on("taskCompleted", data => {
+  console.log(`Task ${data.taskId} completed!`, data);
 
-    // Update user points
-    updateUserPoints(taskData?.points);
-  },
+  // Send custom analytics
+  analytics.track("task_completed", {
+    task_id: data.taskId,
+    task_name: data.taskName,
+    rewards: data.rewards,
+  });
+
+  // Show celebration
+  showCelebration();
+});
+
+embed.on("routeChanged", fullPath => {
+  console.log("Route changed to:", fullPath);
+  // Optional: sync with browser history
 });
 ```
 
@@ -177,9 +219,9 @@ SDK automatically validates configuration parameters and throws appropriate erro
 
 ```typescript
 try {
-  const taskOnEmbed = new TaskOnEmbed({
-    client_id: "", // Empty client_id
-    parentElement: "#non-existent", // Non-existent element
+  const embed = new TaskOnEmbed({
+    baseUrl: "", // Empty baseUrl
+    containerElement: "#non-existent", // Non-existent element
   });
 } catch (error) {
   console.error("Configuration error:", error.message);

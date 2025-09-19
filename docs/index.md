@@ -23,6 +23,9 @@ features:
   - icon: 🔐
     title: Multiple Authentication
     details: Support for both email and EVM wallet authentication to meet different user needs
+  - icon: 🌍
+    title: Multi-language Support
+    details: Built-in support for English, Korean, Japanese, Russian, and Spanish with dynamic switching
   - icon: 📊
     title: Conversion Analytics
     details: Optional visit tracking for conversion rate analysis (only use if needed)
@@ -40,18 +43,15 @@ features:
 ## Quick Preview
 
 ```typescript
-import { TaskOnEmbed, trackVisit } from "@taskon/embed";
+import { TaskOnEmbed } from "@taskon/embed";
 
-// Optional: Track page visits for TaskOn conversion analytics
-// Only use if you need conversion rate analysis
-await trackVisit(); // For anonymous users
-// or
-await trackVisit("Email", "user@example.com"); // For known users
-
-// Initialize
+// Initialize with language support
 const embed = new TaskOnEmbed({
   baseUrl: "https://yourtaskondomain.com",
   containerElement: "#taskon-container",
+  language: "ko", // Start with Korean
+  width: "100%",
+  height: 600,
 });
 
 // Initialize the iframe
@@ -70,16 +70,22 @@ embed.on("loginRequired", async () => {
   });
 });
 
+// Handle task completion
+embed.on("taskCompleted", data => {
+  console.log("Task completed:", data.taskName);
+  console.log("Rewards:", data.rewards);
+});
+
+// Switch language dynamically
+await embed.setLanguage("ja"); // Switch to Japanese
+
 // Handle route changes
 embed.on("routeChanged", fullPath => {
-  // Sync internal route with external URL if needed
   console.log("Route changed:", fullPath);
 });
 
-// Logout
-embed.logout();
-
-// Remove the iframe and all status.
+// Logout and destroy
+await embed.logout();
 embed.destroy();
 ```
 

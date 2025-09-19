@@ -33,6 +33,7 @@ export default defineConfig({
             { text: "Getting Started", link: "/guide/getting-started" },
             { text: "Installation", link: "/guide/installation" },
             { text: "Configuration", link: "/guide/configuration" },
+            { text: "Language Switching", link: "/guide/language-switching" },
             { text: "Authentication", link: "/guide/authentication" },
             { text: "Webhooks", link: "/guide/webhooks" },
             { text: "Event Handling", link: "/guide/events" },

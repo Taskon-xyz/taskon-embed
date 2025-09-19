@@ -250,12 +250,53 @@ setRoute(fullPath: string): Promise<void>
 await embed.setRoute("/profile");
 ```
 
+### setLanguage()
+
+Set the language for the iframe interface. The iframe will switch to the specified language immediately.
+
+```typescript
+setLanguage(language: string): Promise<void>
+```
+
+#### Parameters
+
+- `language: string` - Language key (e.g., 'en', 'ko', 'ru', 'es', 'ja'). Fallback to 'en' if not supported.
+
+#### Examples
+
+```typescript
+// Switch to Korean
+await embed.setLanguage("ko");
+
+// Switch to Japanese
+await embed.setLanguage("ja");
+
+// Switch to Spanish
+await embed.setLanguage("es");
+
+// Unsupported language will fallback to English
+await embed.setLanguage("fr"); // Falls back to 'en'
+```
+
+**Supported Languages:**
+
+- `en` - English
+- `ko` - Korean (한국어)
+- `ja` - Japanese (日本語)
+- `ru` - Russian (Русский)
+- `es` - Spanish (Español)
+
 ## Events
 
 Register events via `embed.on(event, handler)`.
 
+### Available Events
+
 - `loginRequired`: `() => void` - Fired when iframe requires user authentication
 - `routeChanged`: `(fullPath: string) => void` - Fired when iframe internal route changes
+- `taskCompleted`: `(data: TaskCompletedData) => void` - Fired when user completes a task
+
+### Event Examples
 
 ```typescript
 // Triggered when iframe needs user authentication
@@ -274,16 +315,67 @@ embed.on("routeChanged", fullPath => {
   // Optional: Sync with external URL routing
   // window.history.replaceState(null, '', `/embed${fullPath}`);
 });
+
+// Triggered when user completes a task
+embed.on("taskCompleted", data => {
+  console.log("Task completed:", data);
+
+  // Task completion data includes:
+  console.log("Task ID:", data.taskId);
+  console.log("Task Name:", data.taskName);
+  console.log("Template ID:", data.templateId);
+  console.log("Rewards:", data.rewards);
+
+  // Handle task completion (analytics, notifications, etc.)
+  analytics.track("task_completed", {
+    task_id: data.taskId,
+    task_name: data.taskName,
+    rewards: data.rewards,
+  });
+});
+```
+
+### TaskCompletedData Interface
+
+```typescript
+interface TaskCompletedData {
+  /** Task identifier */
+  taskId: string;
+  /** Task name/title */
+  taskName: string;
+  /** Task template identifier */
+  templateId: string;
+  /** The rewards of the task */
+  rewards: TaskReward[];
+}
+
+interface TaskReward {
+  /** Type of reward */
+  rewardType: "Token" | "GTCPoints";
+  /** Amount of reward */
+  rewardAmount: string;
+  /** Name of points/token (optional) */
+  pointName?: string;
+  /** Human readable reward description */
+  rewardDescription: string;
+  /** Token contract address (if applicable) */
+  tokenAddress?: string;
+  /** Blockchain network (if applicable) */
+  tokenNetwork?: string;
+}
 ```
 
 ## Complete Example
 
 ```typescript
-import { TaskOnEmbed, trackVisit } from "@taskon/embed";
+import { TaskOnEmbed } from "@taskon/embed";
 
 const embed = new TaskOnEmbed({
   baseUrl: "https://taskon.xyz",
   containerElement: "#taskon-container",
+  language: "en", // Initial language
+  width: "100%",
+  height: 600,
 });
 
 // Initialize the embed
@@ -320,9 +412,35 @@ embed.on("routeChanged", fullPath => {
   console.log("Route changed to:", fullPath);
 });
 
-// Optional: Track page visit for TaskOn conversion analytics
-// Only use if you need conversion rate analysis
-// await trackVisit(); // For anonymous users
-// or
-// await trackVisit('Email', 'user@example.com'); // For known users
+embed.on("taskCompleted", data => {
+  console.log("Task completed:", data);
+
+  // Analytics tracking
+  analytics.track("task_completed", {
+    task_id: data.taskId,
+    task_name: data.taskName,
+    rewards: data.rewards,
+  });
+
+  // Show success notification
+  showNotification(`Congratulations! You completed "${data.taskName}"`);
+});
+
+// Language switching example
+const languageSelector = document.getElementById("language-selector");
+languageSelector?.addEventListener("change", async event => {
+  const selectedLanguage = (event.target as HTMLSelectElement).value;
+  await embed.setLanguage(selectedLanguage);
+  console.log(`Language switched to: ${selectedLanguage}`);
+});
+
+// Route navigation example
+const navigateToProfile = () => {
+  embed.setRoute("/profile");
+};
+
+// Dynamic size adjustment
+const resizeEmbed = (width: string | number, height: string | number) => {
+  embed.updateSize(width, height);
+};
 ```

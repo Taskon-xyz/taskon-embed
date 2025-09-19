@@ -19,18 +19,24 @@ import {
  * ```typescript
  * const embed = new TaskOnEmbed({
  *   baseUrl: 'https://yourtaskondomain.com',
- *   containerElement: '#taskon-container'
+ *   containerElement: '#taskon-container',
+ *   language: 'ko' // Set initial language
  * });
  *
  * embed.on('loginRequired', () => {
  *   // Handle login request
  * });
  *
+ * await embed.init();
+ *
  * await embed.login({
- *   type: 'email',
+ *   type: 'Email',
  *   account: 'user@example.com',
  *   signature: serverSignature,
  * });
+ *
+ * // Change language dynamically
+ * await embed.setLanguage('ja');
  * ```
  */
 export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
@@ -207,6 +213,27 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
       throw new Error("Not initialized, please call .init() first");
     }
     return this.penpal.setRoute(fullPath);
+  }
+
+  /**
+   * Set language for the iframe
+   *
+   * @param language - Language key (e.g., 'en', 'ko', 'ru', 'es', 'ja'). Fallback to 'en' if not supported
+   *
+   * @example
+   * ```typescript
+   * // Set language to Korean
+   * await embed.setLanguage('ko');
+   *
+   * // Set language to French, fallback to 'en' if not supported
+   * await embed.setLanguage('fr');
+   * ```
+   */
+  public async setLanguage(language: string): Promise<void> {
+    if (!this.penpal) {
+      throw new Error("Not initialized, please call .init() first");
+    }
+    return this.penpal.setLanguage(language);
   }
 
   /**
@@ -415,6 +442,9 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
 
       const urlWithRoute = new URL(fullUrl);
       urlWithRoute.searchParams.set("origin", window.location.origin);
+      if (this.config.language) {
+        urlWithRoute.searchParams.set("lang", this.config.language);
+      }
       iframe.src = urlWithRoute.toString();
 
       // Clean up saved route
@@ -422,6 +452,9 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
     } else {
       const url = new URL(this.config.baseUrl);
       url.searchParams.set("origin", window.location.origin);
+      if (this.config.language) {
+        url.searchParams.set("lang", this.config.language);
+      }
       iframe.src = url.toString();
     }
 
