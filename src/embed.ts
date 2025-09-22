@@ -521,9 +521,9 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
         }
 
         // open new tab of the oauth center
-        // todo test oauthToolUrl
-        const oauthToolUrl =
-          this.config.oauthToolUrl || "https://stage.generalauthservice.com";
+        const oauthToolUrl = this.config.isDev
+          ? "https://stage.generalauthservice.com"
+          : "https://generalauthservice.com";
         const url = new URL(`${oauthToolUrl}${pathMap[snsType]}`);
         url.searchParams.set("state", state);
         url.searchParams.set("from", window.location.href);

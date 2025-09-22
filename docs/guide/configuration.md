@@ -14,8 +14,6 @@ interface TaskOnEmbedConfig {
   width?: string | number;
   /** Height of the embed iframe (CSS units or pixel number) - default: '100%' */
   height?: string | number;
-  /** OAuth tool URL for handling OAuth in white-label mode (default: 'https://generalauthservice.com') */
-  oauthToolUrl?: string;
   /** Language to use when loading the embed. Common values: 'en', 'ko', 'ru', 'es', 'ja' */
   language?: string;
 }
@@ -109,18 +107,6 @@ const embed = new TaskOnEmbed({
 - `ru` - Russian (Русский)
 - `es` - Spanish (Español)
 
-### oauthToolUrl
-
-For white-label deployments, specify a custom OAuth service URL.
-
-```typescript
-const embed = new TaskOnEmbed({
-  baseUrl: "https://your-domain.com",
-  containerElement: "#container",
-  oauthToolUrl: "https://oauth.your-domain.com", // Custom OAuth service
-});
-```
-
 ## Event Handling
 
 Events are handled using the `.on()` method after initialization. See the [API documentation](/api/taskon-embed) for available events.
@@ -181,7 +167,6 @@ const embed = new TaskOnEmbed({
   width: "100%",
   height: 600,
   language: "ko", // Korean interface
-  oauthToolUrl: "https://oauth.taskon.xyz",
 });
 
 // Initialize the embed

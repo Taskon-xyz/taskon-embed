@@ -17,10 +17,10 @@ export interface TaskOnEmbedConfig {
   width?: string | number;
   /** Height of the embed iframe (CSS units or pixel number) - default: '100%' */
   height?: string | number;
-  /** OAuth tool URL for handling OAuth in white-label mode (default: 'https://generalauthservice.com') */
-  oauthToolUrl?: string;
   /** Language to use when loading the embed. Common values: 'en', 'ko', 'ru', 'es', 'ja' */
   language?: string;
+  /** Development mode flag - when true, uses staging OAuth URL (default: false) */
+  isDev?: boolean;
 }
 
 export interface LoginParams {

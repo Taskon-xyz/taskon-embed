@@ -91,7 +91,7 @@ Example: `sess_8k2n9p4q7r3s6t1u_1a2b3c4d`
 The tracking function sends data to:
 
 ```
-https://white-label-api-stage.taskon.xyz/whiteLabel/v1/pageVisitCount
+https://white-label-api.taskon.xyz/whiteLabel/v1/pageVisitCount
 ```
 
 ### Request Headers

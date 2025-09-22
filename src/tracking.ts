@@ -28,6 +28,7 @@ function getSessionId(): string {
  *
  * @param loginType - Authentication type (optional, for logged-in users)
  * @param account - User email or wallet address (optional, for logged-in users)
+ * @param isDev - Development mode flag (default: false). When true, uses staging API
  *
  * @example
  * ```typescript
@@ -38,14 +39,20 @@ function getSessionId(): string {
  *
  * // For anonymous visits (call on page load)
  * await trackVisit();
+ *
+ * // Development mode
+ * await trackVisit('Email', 'user@example.com', true);
  * ```
  */
 export async function trackVisit(
   loginType?: AuthType,
-  account?: string
+  account?: string,
+  isDev?: boolean
 ): Promise<boolean> {
-  // todo test api
-  const url = `https://white-label-api-stage.taskon.xyz/whiteLabel/v1/pageVisitCount`;
+  const apiUrl = isDev
+    ? "https://white-label-api-stage.taskon.xyz"
+    : "https://white-label-api.taskon.xyz";
+  const url = `${apiUrl}/whiteLabel/v1/pageVisitCount`;
   const sessionId = getSessionId();
 
   try {
