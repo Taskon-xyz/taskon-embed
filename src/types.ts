@@ -286,4 +286,9 @@ export type PenpalParentMethods = {
     eventName: string,
     listenerId: string
   ): Promise<void>;
+  /**
+   * Get parent page full URL
+   * @returns Parent page complete URL
+   */
+  getParentUrl(): Promise<string>;
 };

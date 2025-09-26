@@ -68,7 +68,10 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
    * Initialize the embed iframe.
    */
   public async init(): Promise<void> {
-    this.renderIframe();
+    // Check URL for task_invite_code parameter
+    const taskInviteCode = this.getTaskInviteCodeFromUrl();
+
+    this.renderIframe(taskInviteCode);
     await this.initPenpal();
     await this.initWalletProviders();
     this.initialized = true;
@@ -408,13 +411,13 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
    * Renders the TaskOn iframe into the specified container
    * Called automatically during construction
    */
-  private renderIframe(): void {
+  private renderIframe(taskInviteCode?: string | null): void {
     const container = this.resolveContainer();
     if (!container) {
       throw new Error("Container element not found");
     }
     this.container = container;
-    this.iframe = this.createIframe();
+    this.iframe = this.createIframe(taskInviteCode);
     container.appendChild(this.iframe);
   }
 
@@ -425,7 +428,7 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
     return this.config.containerElement;
   }
 
-  private createIframe(): HTMLIFrameElement {
+  private createIframe(taskInviteCode?: string | null): HTMLIFrameElement {
     const iframe = document.createElement("iframe");
 
     // Check if there's a saved route to restore (after OAuth return)
@@ -445,6 +448,10 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
       if (this.config.language) {
         urlWithRoute.searchParams.set("lang", this.config.language);
       }
+      // If task_invite_code exists, pass it as invite_code to iframe
+      if (taskInviteCode) {
+        urlWithRoute.searchParams.set("invite_code", taskInviteCode);
+      }
       iframe.src = urlWithRoute.toString();
 
       // Clean up saved route
@@ -454,6 +461,10 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
       url.searchParams.set("origin", window.location.origin);
       if (this.config.language) {
         url.searchParams.set("lang", this.config.language);
+      }
+      // If task_invite_code exists, pass it as invite_code to iframe
+      if (taskInviteCode) {
+        url.searchParams.set("invite_code", taskInviteCode);
       }
       iframe.src = url.toString();
     }
@@ -610,6 +621,9 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
           }
         }
       },
+      getParentUrl: async () => {
+        return this.getParentFullUrl();
+      },
     };
 
     this.penpalConnection = connect<PenpalChildMethods>({
@@ -618,6 +632,21 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
     });
     // wait for handshake
     this.penpal = await this.penpalConnection.promise;
+  }
+
+  /**
+   * Get task_invite_code parameter from current URL
+   */
+  private getTaskInviteCodeFromUrl(): string | null {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get("task_invite_code");
+  }
+
+  /**
+   * Get parent page complete URL
+   */
+  private getParentFullUrl(): string {
+    return window.location.href;
   }
 
   /**
