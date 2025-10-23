@@ -119,6 +119,20 @@ export interface TaskCompletedData {
 }
 
 /**
+ * Bind conflict event data - fired when binding fails due to account already bound to another email
+ */
+export interface BindConflictData {
+  /** Email that the SNS or address is already bound to */
+  email: string;
+  /** Type of binding that failed */
+  bindType: "sns" | "address";
+  /** SNS type if bindType is "sns" */
+  snsType?: SnsType;
+  /** Address if bindType is "address" */
+  address?: string;
+}
+
+/**
  * Event handlers for TaskOn embed instance
  */
 export interface TaskOnEmbedEvents {
@@ -128,6 +142,8 @@ export interface TaskOnEmbedEvents {
   routeChanged: (fullPath: string) => void;
   /** Fired when user completes a task */
   taskCompleted: (data: TaskCompletedData) => void;
+  /** Fired when binding SNS or address fails due to account already bound to another email */
+  bindConflict: (data: BindConflictData) => void;
 }
 
 /**
@@ -248,6 +264,10 @@ export type PenpalParentMethods = {
    * Notify parent when task is completed
    */
   onTaskCompleted(data: TaskCompletedData): void;
+  /**
+   * Notify parent when binding conflicts with another email
+   */
+  onBindConflict(data: BindConflictData): void;
   /**
    * Request parent to oauth
    * @param snsType - OAuth provider name

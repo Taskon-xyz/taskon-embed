@@ -295,6 +295,7 @@ Register events via `embed.on(event, handler)`.
 - `loginRequired`: `() => void` - Fired when iframe requires user authentication
 - `routeChanged`: `(fullPath: string) => void` - Fired when iframe internal route changes
 - `taskCompleted`: `(data: TaskCompletedData) => void` - Fired when user completes a task
+- `bindConflict`: `(data: BindConflictData) => void` - Fired when binding SNS or address fails because the account is already bound to another email
 
 ### Event Examples
 
@@ -333,6 +334,32 @@ embed.on("taskCompleted", data => {
     rewards: data.rewards,
   });
 });
+
+// Triggered when binding SNS or address fails due to account conflict
+// (White-label mode only)
+embed.on("bindConflict", data => {
+  console.log("Bind conflict detected:", data);
+
+  // Bind conflict data includes:
+  console.log("Already bound to email:", data.email);
+  console.log("Bind type:", data.bindType); // "sns" or "address"
+
+  if (data.bindType === "sns") {
+    console.log("SNS type:", data.snsType); // e.g., "twitter", "discord"
+    // Handle SNS binding conflict
+    showNotification(
+      `This ${data.snsType} account is already bound to ${data.email}. ` +
+        `Please use a different ${data.snsType} account or contact support.`
+    );
+  } else if (data.bindType === "address") {
+    console.log("Address:", data.address);
+    // Handle wallet address binding conflict
+    showNotification(
+      `This wallet address is already bound to ${data.email}. ` +
+        `Please use a different wallet or contact support.`
+    );
+  }
+});
 ```
 
 ### TaskCompletedData Interface
@@ -363,6 +390,23 @@ interface TaskReward {
   /** Blockchain network (if applicable) */
   tokenNetwork?: string;
 }
+```
+
+### BindConflictData Interface
+
+```typescript
+interface BindConflictData {
+  /** Email that the SNS or address is already bound to */
+  email: string;
+  /** Type of binding that failed */
+  bindType: "sns" | "address";
+  /** SNS type if bindType is "sns" */
+  snsType?: SnsType;
+  /** Address if bindType is "address" */
+  address?: string;
+}
+
+type SnsType = "twitter" | "discord" | "telegram" | "reddit";
 ```
 
 ## Complete Example
@@ -424,6 +468,16 @@ embed.on("taskCompleted", data => {
 
   // Show success notification
   showNotification(`Congratulations! You completed "${data.taskName}"`);
+});
+
+embed.on("bindConflict", data => {
+  // Handle binding conflicts
+  const message =
+    data.bindType === "sns"
+      ? `This ${data.snsType} account is already linked to ${data.email}`
+      : `This wallet address is already linked to ${data.email}`;
+
+  showNotification(message, "error");
 });
 
 // Language switching example

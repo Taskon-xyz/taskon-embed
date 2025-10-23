@@ -2,6 +2,7 @@ import { EventEmitter } from "eventemitter3";
 import { connect, Connection, RemoteProxy, WindowMessenger } from "penpal";
 import {
   AuthType,
+  BindConflictData,
   LoginParams,
   LogoutOptions,
   PenpalChildMethods,
@@ -514,6 +515,9 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
       },
       onTaskCompleted: (data: TaskCompletedData) => {
         this.emit("taskCompleted", data);
+      },
+      onBindConflict: (data: BindConflictData) => {
+        this.emit("bindConflict", data);
       },
       requestOauth: (snsType, state) => {
         const pathMap: Record<SnsType, string> = {
