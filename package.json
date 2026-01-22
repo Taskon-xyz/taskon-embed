@@ -1,7 +1,7 @@
 {
   "name": "@taskon/embed",
   "private": false,
-  "version": "1.1.0",
+  "version": "1.2.1",
   "description": "TaskOn embed widget for integrating TaskOn tasks into your website",
   "main": "./build/dist/embed.js",
   "module": "./build/dist/embed.js",
@@ -70,5 +70,6 @@
     "@types/eventemitter3": "^1.2.0",
     "eventemitter3": "^5.0.1",
     "penpal": "^7.0.4"
-  }
+  },
+  "packageManager": "pnpm@9.14.1+sha1.d6e4ad498851766dc231405c14592ac6dd305ab1"
 }

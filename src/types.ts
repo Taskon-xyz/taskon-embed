@@ -5,6 +5,17 @@
 /** Supported authentication types */
 export type AuthType = "Email" | "WalletAddress";
 
+/** Community tab keys for visibility configuration */
+export type CommunityTabKey =
+  | "home"
+  | "quests"
+  | "leaderboard"
+  | "incentives"
+  | "benefit"
+  | "wheelOfFortune"
+  | "events"
+  | "milestone";
+
 /**
  * Configuration options for TaskOn embed instance
  */
@@ -21,6 +32,10 @@ export interface TaskOnEmbedConfig {
   language?: string;
   /** Development mode flag - when true, uses staging OAuth URL (default: false) */
   isDev?: boolean;
+  /** Whitelist: only show these tabs (takes precedence over tabsExclude) */
+  tabsInclude?: CommunityTabKey[];
+  /** Blacklist: hide these tabs */
+  tabsExclude?: CommunityTabKey[];
 }
 
 export interface LoginParams {

@@ -453,6 +453,19 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
       if (taskInviteCode) {
         urlWithRoute.searchParams.set("invite_code", taskInviteCode);
       }
+      // Add tabs visibility configuration if provided
+      if (this.config.tabsInclude) {
+        urlWithRoute.searchParams.set(
+          "tabsInclude",
+          JSON.stringify(this.config.tabsInclude)
+        );
+      }
+      if (this.config.tabsExclude) {
+        urlWithRoute.searchParams.set(
+          "tabsExclude",
+          JSON.stringify(this.config.tabsExclude)
+        );
+      }
       iframe.src = urlWithRoute.toString();
 
       // Clean up saved route
@@ -466,6 +479,19 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
       // If task_invite_code exists, pass it as invite_code to iframe
       if (taskInviteCode) {
         url.searchParams.set("invite_code", taskInviteCode);
+      }
+      // Add tabs visibility configuration if provided
+      if (this.config.tabsInclude) {
+        url.searchParams.set(
+          "tabsInclude",
+          JSON.stringify(this.config.tabsInclude)
+        );
+      }
+      if (this.config.tabsExclude) {
+        url.searchParams.set(
+          "tabsExclude",
+          JSON.stringify(this.config.tabsExclude)
+        );
       }
       iframe.src = url.toString();
     }
