@@ -25,9 +25,27 @@ interface TaskOnEmbedConfig {
 
 The base URL of your TaskOn service or white-label domain.
 
+`baseUrl` is normalized automatically:
+
+- Missing protocol is auto-filled (`https://` by default)
+- Local hosts (`localhost`, `127.0.0.1`, `[::1]`, `0.0.0.0`) default to `http://`
+- Trailing slash is allowed
+
 ```typescript
 const embed = new TaskOnEmbed({
   baseUrl: "https://taskon.xyz", // Production
+  containerElement: "#container",
+});
+
+// Host-only input is also supported
+const embed2 = new TaskOnEmbed({
+  baseUrl: "taskon.xyz", // normalized to https://taskon.xyz/
+  containerElement: "#container",
+});
+
+// Local development host defaults to http://
+const embed3 = new TaskOnEmbed({
+  baseUrl: "localhost:5173", // normalized to http://localhost:5173/
   containerElement: "#container",
 });
 
@@ -37,6 +55,8 @@ const embed = new TaskOnEmbed({
   containerElement: "#container",
 });
 ```
+
+Handshake timeout is handled internally by the SDK (fixed at 10000ms), so no extra timeout config is required.
 
 ### containerElement
 

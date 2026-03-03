@@ -20,7 +20,18 @@ export type CommunityTabKey =
  * Configuration options for TaskOn embed instance
  */
 export interface TaskOnEmbedConfig {
-  /** Base URL of the TaskOn service */
+  /**
+   * Base URL of the TaskOn service.
+   *
+   * Supported formats:
+   * - Full URL: "https://taskon.xyz", "http://localhost:5173"
+   * - Host only: "taskon.xyz", "localhost:5173" (protocol is auto-prepended)
+   *
+   * Notes:
+   * - Trailing slash is tolerated.
+   * - For local hosts (localhost/127.0.0.1/[::1]/0.0.0.0), default protocol is http.
+   * - For other hosts, default protocol is https.
+   */
   baseUrl: string;
   /** CSS selector string or HTMLElement where the embed should be rendered */
   containerElement: string | HTMLElement;

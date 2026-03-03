@@ -12,6 +12,19 @@ import {
   TaskOnEmbedConfig,
   TaskOnEmbedEvents,
 } from "./types";
+import {
+  appendCommonIframeParams,
+  buildBaseUrlForRouteJoin,
+  resolveBaseUrl,
+} from "./utils/embed-url";
+
+/**
+ * Internal Penpal handshake timeout.
+ *
+ * Keep this internal to simplify public API while still preventing
+ * indefinite pending states when origin configuration is invalid.
+ */
+const DEFAULT_HANDSHAKE_TIMEOUT_MS = 10000;
 
 /**
  * TaskOn Embed SDK for integrating TaskOn tasks into third-party websites
@@ -42,6 +55,8 @@ import {
  */
 export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
   private config: TaskOnEmbedConfig;
+  private embedBaseUrl: URL;
+  private allowedOrigin: string;
   private iframe: HTMLIFrameElement | null = null;
   private container: HTMLElement | null = null;
   private penpal: RemoteProxy<PenpalChildMethods> | null = null;
@@ -62,7 +77,15 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
    */
   constructor(config: TaskOnEmbedConfig) {
     super();
-    this.config = { ...config };
+
+    const resolvedBaseUrl = resolveBaseUrl(config.baseUrl);
+    this.embedBaseUrl = resolvedBaseUrl;
+    this.allowedOrigin = resolvedBaseUrl.origin;
+
+    this.config = {
+      ...config,
+      baseUrl: resolvedBaseUrl.toString(),
+    };
   }
 
   /**
@@ -435,64 +458,33 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
     // Check if there's a saved route to restore (after OAuth return)
     const savedRoute = localStorage.getItem("taskon_saved_route");
     if (savedRoute) {
-      // Handle potential duplicate slashes
-      const baseUrl = this.config.baseUrl.endsWith("/")
-        ? this.config.baseUrl.slice(0, -1)
-        : this.config.baseUrl;
       const routePath = savedRoute.startsWith("/")
         ? savedRoute
         : "/" + savedRoute;
-      const fullUrl = baseUrl + routePath;
 
-      const urlWithRoute = new URL(fullUrl);
-      urlWithRoute.searchParams.set("origin", window.location.origin);
-      if (this.config.language) {
-        urlWithRoute.searchParams.set("lang", this.config.language);
-      }
-      // If task_invite_code exists, pass it as invite_code to iframe
-      if (taskInviteCode) {
-        urlWithRoute.searchParams.set("invite_code", taskInviteCode);
-      }
-      // Add tabs visibility configuration if provided
-      if (this.config.tabsInclude) {
-        urlWithRoute.searchParams.set(
-          "tabsInclude",
-          JSON.stringify(this.config.tabsInclude)
-        );
-      }
-      if (this.config.tabsExclude) {
-        urlWithRoute.searchParams.set(
-          "tabsExclude",
-          JSON.stringify(this.config.tabsExclude)
-        );
-      }
+      const fullUrl = `${buildBaseUrlForRouteJoin(this.embedBaseUrl)}${routePath}`;
+      const urlWithRoute = appendCommonIframeParams(new URL(fullUrl), {
+        origin: window.location.origin,
+        language: this.config.language,
+        taskInviteCode,
+        tabsInclude: this.config.tabsInclude,
+        tabsExclude: this.config.tabsExclude,
+      });
       iframe.src = urlWithRoute.toString();
 
       // Clean up saved route
       localStorage.removeItem("taskon_saved_route");
     } else {
-      const url = new URL(this.config.baseUrl);
-      url.searchParams.set("origin", window.location.origin);
-      if (this.config.language) {
-        url.searchParams.set("lang", this.config.language);
-      }
-      // If task_invite_code exists, pass it as invite_code to iframe
-      if (taskInviteCode) {
-        url.searchParams.set("invite_code", taskInviteCode);
-      }
-      // Add tabs visibility configuration if provided
-      if (this.config.tabsInclude) {
-        url.searchParams.set(
-          "tabsInclude",
-          JSON.stringify(this.config.tabsInclude)
-        );
-      }
-      if (this.config.tabsExclude) {
-        url.searchParams.set(
-          "tabsExclude",
-          JSON.stringify(this.config.tabsExclude)
-        );
-      }
+      const url = appendCommonIframeParams(
+        new URL(this.embedBaseUrl.toString()),
+        {
+          origin: window.location.origin,
+          language: this.config.language,
+          taskInviteCode,
+          tabsInclude: this.config.tabsInclude,
+          tabsExclude: this.config.tabsExclude,
+        }
+      );
       iframe.src = url.toString();
     }
 
@@ -532,7 +524,9 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
     }
     const messenger = new WindowMessenger({
       remoteWindow: this.iframe.contentWindow,
-      allowedOrigins: [this.config.baseUrl],
+      // Penpal compares event.origin strictly, so we must use URL.origin
+      // instead of a full URL that may include trailing slash/path.
+      allowedOrigins: [this.allowedOrigin],
     });
 
     const methods: PenpalParentMethods = {
@@ -659,6 +653,8 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
     this.penpalConnection = connect<PenpalChildMethods>({
       messenger,
       methods,
+      // Keep timeout guard to avoid indefinite pending state on handshake failures.
+      timeout: DEFAULT_HANDSHAKE_TIMEOUT_MS,
     });
     // wait for handshake
     this.penpal = await this.penpalConnection.promise;

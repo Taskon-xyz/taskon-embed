@@ -143,13 +143,34 @@ new TaskOnEmbed(config: TaskOnEmbedConfig)
 
 ```typescript
 interface TaskOnEmbedConfig {
-  baseUrl: string; // TaskOn service URL (required)
+  baseUrl: string; // TaskOn service URL (required), supports host-only input like "taskon.xyz" or "localhost:5173"
   containerElement: string | HTMLElement; // Container for the iframe (required)
   width?: string | number; // Width of the iframe (optional)
   height?: string | number; // Height of the iframe (optional)
-  oauthToolUrl?: string; // OAuth tool URL for social logins (optional)
 }
 ```
+
+`baseUrl` normalization rules:
+
+- Missing protocol is auto-filled (`https://` by default)
+- Local hosts (`localhost`, `127.0.0.1`, `[::1]`, `0.0.0.0`) default to `http://`
+- Trailing slash is tolerated (origin matching remains stable)
+
+Examples:
+
+```typescript
+new TaskOnEmbed({
+  baseUrl: "taskon.xyz", // normalized to https://taskon.xyz/
+  containerElement: "#taskon-container",
+});
+
+new TaskOnEmbed({
+  baseUrl: "localhost:5173", // normalized to http://localhost:5173/
+  containerElement: "#taskon-container",
+});
+```
+
+Handshake failure timeout is managed internally (fixed at 10000ms) to keep the public API minimal.
 
 #### Methods
 

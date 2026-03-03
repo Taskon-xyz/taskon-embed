@@ -19,6 +19,9 @@ interface TaskOnEmbedConfig {
 }
 ```
 
+`baseUrl` supports both full URLs and host-only values. Missing protocol is auto-filled (`https://` by default, `http://` for local hosts).
+The SDK applies an internal handshake timeout (10000ms) during initialization.
+
 ## AuthType
 
 Supported authentication types.
