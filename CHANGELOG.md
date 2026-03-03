@@ -2,6 +2,12 @@
 
 All notable changes to the TaskOn Embed SDK will be documented in this file.
 
+## [1.2.2] - 2026-03-03
+
+### Changed
+
+- Normalize `baseUrl` during initialization (host-only, protocol auto-fill, trailing slash tolerance)
+
 ## [1.2.1] - 2025-01-22
 
 ### Added
