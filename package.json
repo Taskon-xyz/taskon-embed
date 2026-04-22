@@ -71,5 +71,5 @@
     "eventemitter3": "^5.0.1",
     "penpal": "^7.0.4"
   },
-  "packageManager": "pnpm@9.14.1+sha1.d6e4ad498851766dc231405c14592ac6dd305ab1"
+  "packageManager": "npm@10.9.0"
 }
