@@ -404,6 +404,10 @@ export class TaskOnEmbed extends EventEmitter<TaskOnEmbedEvents> {
       providers["bitkeep.ethereum"] = (window as any).bitkeep.ethereum;
     }
 
+    if ((window as any).topnod) {
+      providers.topnod = (window as any).topnod;
+    }
+
     return providers;
   }
 
