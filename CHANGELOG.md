@@ -2,6 +2,12 @@
 
 All notable changes to the TaskOn Embed SDK will be documented in this file.
 
+## [1.2.4] - 2026-06-24
+
+### Fixed
+
+- Complete the `WebhookPayload` type to match the actual delivered payload: add the previously missing `user_id`, `evm_address`, `email`, and `timestamp` fields (`user_id` and `timestamp` are the fields the webhook signature is computed over)
+
 ## [1.2.3] - 2026-04-22
 
 ### Added

@@ -274,6 +274,14 @@ interface WebhookPayload {
   token_network?: string;
   /** Name of the point system (only for GTCPoints rewards) */
   point_name?: string;
+  /** Unique identifier of the user who received the reward (also used in the signature) */
+  user_id: number;
+  /** Single-element array containing the user's primary EVM address */
+  evm_address: string[];
+  /** Email address of the user who received the reward */
+  email: string;
+  /** Unix timestamp (seconds) when the reward was distributed (also used in the signature) */
+  timestamp: number;
 }
 ```
 
