@@ -32,8 +32,8 @@ TaskOn includes the following authentication headers in webhook requests:
 
 The signature is an HMAC-SHA256 over a small JSON payload containing only `user_id` and `timestamp`, signed with your secret key. Keys are in **alphabetical order**, with integer values and no whitespace:
 
-```json
-{ "timestamp": 1758251308, "user_id": 11111 }
+```text
+{"timestamp":1758251308,"user_id":11111}
 ```
 
 ### Authentication Implementation Examples
