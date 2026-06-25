@@ -30,18 +30,15 @@ TaskOn includes the following authentication headers in webhook requests:
 
 ### Signature Verification
 
-The signature is generated using HMAC-SHA256 with your secret key and a payload containing `user_id` and `timestamp`:
+The signature is an HMAC-SHA256 over a small JSON payload containing only `user_id` and `timestamp`, signed with your secret key. Keys are in **alphabetical order**, with integer values and no whitespace:
 
 ```json
-{
-  "user_id": 11111,
-  "timestamp": 1758251308
-}
+{ "timestamp": 1758251308, "user_id": 11111 }
 ```
 
 ### Authentication Implementation Examples
 
-**Important Note**: For signature verification to work correctly across different implementations, it's crucial that both TaskOn and your project use identical JSON serialization formats. The signature is generated using a JSON payload with `user_id` and `timestamp` fields in alphabetical order without extra spaces.
+**Important Note**: For signature verification to work correctly across implementations, both TaskOn and your project must produce the **exact same bytes**. The canonical string is `{"timestamp":<ts>,"user_id":<id>}` — keys in alphabetical order, no extra spaces. TaskOn's backend signs with Go's `json.Marshal` on a map, which sorts keys alphabetically. Note that JavaScript's `JSON.stringify` follows _insertion order_ (it does **not** sort), so you must build the object with `timestamp` before `user_id`.
 
 #### Go Implementation (Server Side)
 
@@ -62,13 +59,13 @@ func main() {
     secretKey := "your-secret-key"
     h := hmac.New(sha256.New, []byte(secretKey))
 
-    // Create payload with fixed key order to match Node.js JSON.stringify
+    // json.Marshal sorts map keys alphabetically → {"timestamp":...,"user_id":...}
     payload := map[string]interface{}{
         "user_id":   11111,
         "timestamp": 1758251308,
     }
 
-    // Use consistent JSON formatting (no spaces, sorted keys)
+    // Consistent JSON formatting (no spaces, keys sorted alphabetically by Go)
     data, err := json.Marshal(payload)
     if err != nil {
         return
@@ -151,13 +148,14 @@ const crypto = require("crypto");
 const express = require("express");
 
 function verifyWebhookSignature(payload, signature, secretKey) {
-  // Create signature payload with consistent key order (matches Go implementation)
+  // Keys MUST be alphabetical to match TaskOn (Go json.Marshal sorts keys):
+  // {"timestamp":...,"user_id":...}. JSON.stringify keeps insertion order,
+  // so list timestamp before user_id.
   const signaturePayload = {
-    user_id: payload.user_id,
     timestamp: payload.timestamp,
+    user_id: payload.user_id,
   };
 
-  // Use consistent JSON formatting - JavaScript naturally sorts keys alphabetically
   const expectedSignature = crypto
     .createHmac("sha256", secretKey)
     .update(JSON.stringify(signaturePayload))
@@ -232,7 +230,7 @@ The webhook payload includes comprehensive information about the reward distribu
 All webhook payloads include the following user and context information:
 
 - `user_id`: Unique identifier of the user who completed the task
-- `evm_address`: Array of EVM wallet addresses associated with the user
+- `evm_address`: Single-element array containing the user's primary EVM address
 - `email`: User's email address
 - `timestamp`: Unix timestamp when the reward was distributed
 
@@ -257,7 +255,7 @@ When the task reward is configured as a token, the webhook payload includes the 
   "token_symbol": "USDT",
   "token_network": "bsc",
   "user_id": 11111,
-  "evm_address": ["0xaaaaaaaaa", "0xbbbbbbbbb"],
+  "evm_address": ["0xaaaaaaaaa"],
   "email": "user@example.com",
   "timestamp": 1758251308
 }
@@ -272,7 +270,7 @@ When the task reward is configured as a token, the webhook payload includes the 
 - `token_symbol`: Symbol of the distributed token
 - `token_network`: The blockchain network where the token was distributed
 - `user_id`: Unique identifier of the user who received the reward
-- `evm_address`: Array of EVM wallet addresses associated with the user
+- `evm_address`: Single-element array containing the user's primary EVM address
 - `email`: User's email address
 - `timestamp`: Unix timestamp when the reward was distributed
 
@@ -287,7 +285,7 @@ When the task reward is configured as points, the webhook payload includes the f
   "reward_amount": "100",
   "point_name": "PointNameA",
   "user_id": 11111,
-  "evm_address": ["0xaaaaaaaaa", "0xbbbbbbbbb"],
+  "evm_address": ["0xaaaaaaaaa"],
   "email": "user@example.com",
   "timestamp": 1758251308
 }
@@ -300,7 +298,7 @@ When the task reward is configured as points, the webhook payload includes the f
 - `reward_amount`: The numeric amount of points distributed
 - `point_name`: The name of the point system used
 - `user_id`: Unique identifier of the user who received the reward
-- `evm_address`: Array of EVM wallet addresses associated with the user
+- `evm_address`: Single-element array containing the user's primary EVM address
 - `email`: User's email address
 - `timestamp`: Unix timestamp when the reward was distributed
 
@@ -341,9 +339,10 @@ const app = express();
 app.use(express.json());
 
 function verifyWebhookSignature(payload, signature, secretKey) {
+  // Alphabetical key order to match TaskOn: {"timestamp":...,"user_id":...}
   const signaturePayload = {
-    user_id: payload.user_id,
     timestamp: payload.timestamp,
+    user_id: payload.user_id,
   };
 
   const expectedSignature = crypto
@@ -445,7 +444,7 @@ First, generate a test signature for your test payload:
 node -e "
 const crypto = require('crypto');
 const secretKey = 'your-secret-key';
-const payload = { user_id: 11111, timestamp: 1758251308 };
+const payload = { timestamp: 1758251308, user_id: 11111 };
 const signature = crypto.createHmac('sha256', secretKey)
   .update(JSON.stringify(payload))
   .digest('hex');
@@ -468,7 +467,7 @@ curl --location 'https://your-api-domain.com/webhook/reward-notification' \
     "token_symbol": "USDT",
     "token_network": "bsc",
     "user_id": 11111,
-    "evm_address": ["0xaaaaaaaaa", "0xbbbbbbbbb"],
+    "evm_address": ["0xaaaaaaaaa"],
     "email": "test@example.com",
     "timestamp": 1758251308
 }'
@@ -487,7 +486,7 @@ curl --location 'https://your-api-domain.com/webhook/reward-notification' \
     "reward_amount": "100",
     "point_name": "PointNameA",
     "user_id": 11111,
-    "evm_address": ["0xaaaaaaaaa", "0xbbbbbbbbb"],
+    "evm_address": ["0xaaaaaaaaa"],
     "email": "test@example.com",
     "timestamp": 1758251308
 }'
@@ -547,7 +546,7 @@ curl --location 'https://your-api-domain.com/webhook/reward-notification' \
 
 2. **401 Unauthorized - Invalid Signature**:
    - Verify your secret key is correct
-   - Ensure signature generation uses the exact same payload structure: `{"user_id": <id>, "timestamp": <timestamp>}`
+   - Ensure signature generation uses the exact same payload structure: `{"timestamp": <timestamp>, "user_id": <id>}`
    - Check JSON serialization format (no extra spaces, consistent ordering)
    - Verify HMAC-SHA256 algorithm is being used correctly
 
